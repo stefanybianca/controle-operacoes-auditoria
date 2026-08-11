@@ -1,0 +1,48 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Controle de Operações — Auditoria</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f5f7fa;color:#17202a}header{background:#17202a;color:#fff;padding:24px 32px}header h1{margin:0 0 6px;font-size:24px}header p{margin:0;color:#cbd5e1}main{max-width:1400px;margin:24px auto;padding:0 18px}.card{background:#fff;border:1px solid #dfe5ec;border-radius:12px;padding:20px;margin-bottom:18px;box-shadow:0 2px 8px #0000000b}.upload{border:2px dashed #9aa7b5;text-align:center;padding:32px;border-radius:10px;background:#fafbfd}button{border:0;border-radius:8px;padding:10px 15px;cursor:pointer;font-weight:600;background:#1f6feb;color:white}button.secondary{background:#e9eef5;color:#17202a}input,select{padding:9px;border:1px solid #ccd5df;border-radius:7px;background:white}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}.metric{background:#f7f9fc;border-radius:9px;padding:14px}.metric b{display:block;font-size:24px;margin-top:5px}.filters{display:flex;gap:10px;flex-wrap:wrap}.filters label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:700}.table-wrap{overflow:auto;max-height:600px;border:1px solid #e0e6ed;border-radius:8px}table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px solid #e6ebf0;padding:9px;text-align:left;white-space:nowrap}th{position:sticky;top:0;background:#eef2f6;z-index:1}.hidden{display:none}.muted{color:#64748b}.status{padding:9px 12px;border-radius:7px;background:#eef6ff;margin-top:12px}.error{color:#b42318;font-weight:700}
+</style></head><body><header><h1>Controle de Operações — Auditoria de Apontamentos</h1><p>Leitura e auditoria local de planilhas Excel</p></header><main>
+<section class="card"><div class="upload"><h2>Selecione a planilha Excel</h2><p class="muted">O processamento ocorre no navegador, sem IA.</p><input id="file" type="file" accept=".xlsx,.xls"><div id="status"></div></div></section>
+<section id="dashboard" class="hidden"><div class="card"><h2>Resumo da auditoria</h2><div class="grid" id="metrics"></div></div>
+<div class="card"><h2>Filtros</h2><div class="filters"><label>Equipamento<select id="fEquip"></select></label><label>Operador<select id="fOp"></select></label><label>Data<select id="fDate"></select></label><label>Tipo de erro<select id="fType"></select></label><button id="clear" class="secondary">Limpar filtros</button><button id="export">Exportar CSV</button></div></div>
+<div class="card"><h2>Erros encontrados</h2><div id="count" class="muted"></div><div class="table-wrap"><table><thead><tr><th>Equipamento</th><th>Tipo Equipamento</th><th>Data</th><th>Operador</th><th>Matrícula</th><th>Turno</th><th>Tipo</th><th>Código</th><th>Início</th><th>Fim</th><th>Duração</th><th>Motivo</th><th>Esperado</th><th>Diferença</th></tr></thead><tbody id="errors"></tbody></table></div></div>
+<div class="card"><h2>Prévia dos dados originais</h2><small id="info"></small><div class="table-wrap"><table id="preview"></table></div></div></section></main>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script><script>
+let rows=[],errors=[],filtered=[],headers=[];
+const $=id=>document.getElementById(id), val=(r,n)=>r[n]==null?'':String(r[n]).trim();
+function unique(a){return [...new Set(a.filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'))}
+function esc(x){return String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]) )}
+function opts(id,a){$(id).innerHTML='<option value="">Todos</option>'+unique(a).map(x=>'<option>'+esc(x)+'</option>').join('')}
+function dateObj(r){let d=val(r,'Data Início'),t=val(r,'Hora Início')||'00:00:00';let p=d.split('/');let s=p.length===3?`${p[2]}-${p[1]}-${p[0]} ${t}`:`${d} ${t}`;let x=new Date(s);return isNaN(x)?null:x}
+function endObj(r){let d=val(r,'Data Fim'),t=val(r,'Hora Fim')||'00:00:00';let p=d.split('/');let s=p.length===3?`${p[2]}-${p[1]}-${p[0]} ${t}`:`${d} ${t}`;let x=new Date(s);return isNaN(x)?null:x}
+function mins(r){let a=dateObj(r),b=endObj(r);return a&&b?(b-a)/60000:null}
+function hm(r){let m=(val(r,'Hora Início').match(/^(\d{1,2}):(\d{2})/));return m?Number(m[1])*60+Number(m[2]):null}
+function add(r,type,motivo,expected='',diff=''){errors.push({equip:val(r,'Equipamento'),tipoEq:val(r,'Tipo Equipamento'),date:val(r,'Data Início'),op:val(r,'Operador')||'Operador não identificado',mat:val(r,'Matrícula Operador'),turn:val(r,'Turno'),type,codigo:val(r,'Código'),ini:val(r,'Hora Início'),fim:val(r,'Hora Fim'),dur:mins(r),motivo,expected,diff})}
+function audit(){
+ errors=[];const groups=new Map();
+ rows.forEach(r=>{let k=val(r,'Equipamento')+'|'+val(r,'Data Início');if(!groups.has(k))groups.set(k,[]);groups.get(k).push(r)});
+ for(const rs of groups.values()){
+  rs.sort((a,b)=>(dateObj(a)?.getTime()||0)-(dateObj(b)?.getTime()||0));
+  rs.forEach(r=>{if(val(r,'Código')==='Excesso de Almoço')add(r,'Almoço','Excesso de Almoço');if(val(r,'Código')==='Excesso de Janta')add(r,'Janta','Excesso de Janta')});
+  const byOp=new Map();rs.forEach(r=>{let o=val(r,'Operador');if(o){if(!byOp.has(o))byOp.set(o,[]);byOp.get(o).push(r)}});
+  for(const os of byOp.values()){
+   function meal(code,a,b,label){
+    const eligible=os.some(r=>{let m=hm(r);return m!=null&&m>=a&&m<b&&val(r,'Código')!=='Inativo'});
+    if(!eligible)return;
+    const ms=os.filter(r=>val(r,'Código')===code&&hm(r)!=null&&hm(r)>=a&&hm(r)<b);
+    if(!ms.length){add(os.find(r=>{let m=hm(r);return m!=null&&m>=a&&m<b})||os[0],label,label+' não apontado');return}
+    ms.forEach(r=>{let d=mins(r);if(d!=null&&d<60)add(r,label,label+' menor que 1 hora');else if(d!=null&&d>70)add(r,label,label+' maior que 1h10')});
+    if(ms.length>1)ms.slice(1).forEach(r=>add(r,label,label+' duplicado'));
+   }
+   meal('Almoço',660,780,'Almoço');meal('Janta',1140,1260,'Janta');
+  }
+  rs.filter(r=>val(r,'Código')==='Troca de Turno').forEach(r=>{let m=hm(r);if(m==null)return;let expected=[420,920,1420],n=expected.reduce((x,y)=>Math.abs(y-m)<Math.abs(x-m)?y:x),d=m-n;if(d!==0){let e=String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0');add(r,'Troca de turno','Troca de turno fora do horário',e,d)}});
+ }
+ render();
+}
+function render(){let a=$('fEquip').value,b=$('fOp').value,c=$('fDate').value,d=$('fType').value;filtered=errors.filter(e=>(!a||e.equip===a)&&(!b||e.op===b)&&(!c||e.date===c)&&(!d||e.type===d));$('count').textContent=filtered.length+' erro(s) exibido(s) de '+errors.length+' encontrado(s).';$('errors').innerHTML=filtered.map(e=>`<tr><td>${esc(e.equip)}</td><td>${esc(e.tipoEq)}</td><td>${esc(e.date)}</td><td>${esc(e.op)}</td><td>${esc(e.mat)}</td><td>${esc(e.turn)}</td><td>${esc(e.type)}</td><td>${esc(e.codigo)}</td><td>${esc(e.ini)}</td><td>${esc(e.fim)}</td><td>${e.dur==null?'':e.dur.toFixed(2)}</td><td class="error">${esc(e.motivo)}</td><td>${esc(e.expected)}</td><td>${esc(e.diff)}</td></tr>`).join('');let u=unique(rows.map(r=>val(r,'Equipamento'))).length,o=unique(rows.map(r=>val(r,'Operador'))).length,ds=unique(rows.map(r=>val(r,'Data Início'))).length;$('metrics').innerHTML=[['Registros',rows.length],['Equipamentos',u],['Operadores',o],['Datas',ds],['Total de erros',errors.length],['Almoço',errors.filter(e=>e.type==='Almoço').length],['Janta',errors.filter(e=>e.type==='Janta').length],['Troca de turno',errors.filter(e=>e.type==='Troca de turno').length]].map(x=>`<div class="metric">${x[0]}<b>${x[1]}</b></div>`).join('')}
+function preview(){ $('info').textContent=rows.length+' registros; '+headers.length+' colunas.';let h='<thead><tr>'+headers.map(x=>'<th>'+esc(x||'(coluna sem nome)')+'</th>').join('')+'</tr></thead>';let b=rows.slice(0,10).map(r=>'<tr>'+headers.map(x=>'<td>'+esc(val(r,x))+'</td>').join('')+'</tr>').join('');$('preview').innerHTML=h+'<tbody>'+b+'</tbody>'}
+$('file').onchange=async e=>{let f=e.target.files[0];if(!f)return;try{let wb=XLSX.read(await f.arrayBuffer(),{cellDates:false}),ws=wb.Sheets[wb.SheetNames[0]],a=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});headers=(a[1]||[]).map(String);rows=a.slice(2).filter(r=>r.some(x=>String(x).trim()!=='')).map(r=>{let o={};headers.forEach((h,i)=>o[h]=r[i]??'');return o});$('status').className='status';$('status').textContent='Planilha carregada com sucesso: '+f.name;$('dashboard').classList.remove('hidden');preview();opts('fEquip',rows.map(r=>val(r,'Equipamento')));opts('fOp',rows.map(r=>val(r,'Operador')));opts('fDate',rows.map(r=>val(r,'Data Início')));audit();opts('fType',errors.map(e=>e.type))}catch(err){$('status').className='status error';$('status').textContent='Erro ao ler a planilha: '+err.message}};
+['fEquip','fOp','fDate','fType'].forEach(id=>$(id).onchange=render);$('clear').onclick=()=>{['fEquip','fOp','fDate','fType'].forEach(id=>$(id).value='');render()};$('export').onclick=()=>{let c=['Equipamento','Tipo Equipamento','Data','Operador','Matrícula','Turno','Tipo','Código','Início','Fim','Duração','Motivo','Esperado','Diferença'];let l=[c,...filtered.map(e=>[e.equip,e.tipoEq,e.date,e.op,e.mat,e.turn,e.type,e.codigo,e.ini,e.fim,e.dur??'',e.motivo,e.expected,e.diff])];let csv='\ufeff'+l.map(r=>r.map(x=>'"'+String(x??'').replaceAll('"','""')+'"').join(';')).join('\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='relatorio_auditoria.csv';a.click()};
+</script></body></html>
