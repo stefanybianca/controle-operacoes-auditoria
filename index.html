@@ -297,7 +297,6 @@ Exportar CSV
 
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 
-
 <script>
 
 let rows=[];
@@ -305,9 +304,12 @@ let errors=[];
 let filtered=[];
 let headers=[];
 
-
 const $=id=>document.getElementById(id);
 
+
+/* ====================================================
+   FUNÇÕES BÁSICAS
+==================================================== */
 
 function val(r,n){
   return r[n]==null ? '' : String(r[n]).trim();
@@ -317,7 +319,9 @@ function val(r,n){
 function unique(a){
 
   return [
-    ...new Set(a.filter(Boolean))
+    ...new Set(
+      a.filter(Boolean)
+    )
   ].sort(
     (a,b)=>a.localeCompare(b,'pt-BR')
   );
@@ -346,65 +350,64 @@ function opts(id,a){
   $(id).innerHTML=
     '<option value="">Todos</option>'+
     unique(a)
-      .map(x=>'<option>'+esc(x)+'</option>')
+      .map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>')
       .join('');
 
 }
 
 
-/*
-====================================================
-DATA E HORA
-====================================================
-*/
+/* ====================================================
+   DATA E HORA
+==================================================== */
 
 function parseDateTime(date,time){
 
   date=String(date||'').trim();
   time=String(time||'00:00:00').trim();
 
+  if(!date)
+    return null;
+
   const p=date.split('/');
 
   if(p.length===3){
 
-    const partesHora=time.split(':').map(Number);
+    const h=time.split(':').map(Number);
 
-    return new Date(
+    const d=new Date(
       Number(p[2]),
       Number(p[1])-1,
       Number(p[0]),
-      partesHora[0]||0,
-      partesHora[1]||0,
-      partesHora[2]||0
+      h[0]||0,
+      h[1]||0,
+      h[2]||0
     );
 
+    return isNaN(d.getTime()) ? null : d;
   }
 
-  return new Date(date+' '+time);
+  const d=new Date(date+' '+time);
 
+  return isNaN(d.getTime()) ? null : d;
 }
 
 
 function dateObj(r){
 
-  const x=parseDateTime(
+  return parseDateTime(
     val(r,'Data Início'),
     val(r,'Hora Início')
   );
-
-  return isNaN(x.getTime()) ? null : x;
 
 }
 
 
 function endObj(r){
 
-  const x=parseDateTime(
+  return parseDateTime(
     val(r,'Data Fim'),
     val(r,'Hora Fim')
   );
-
-  return isNaN(x.getTime()) ? null : x;
 
 }
 
@@ -417,41 +420,57 @@ function mins(r){
   if(!a||!b)
     return null;
 
-  let d=(b-a)/60000;
+  let result=(b-a)/60000;
 
   /*
-  Se o apontamento atravessar meia-noite,
-  corrige a diferença.
+    Caso o apontamento atravesse meia-noite.
   */
+  if(result<0)
+    result+=1440;
 
-  if(d<0)
-    d+=24*60;
-
-  return d;
-
+  return result;
 }
 
 
 function hm(r){
 
-  const m=
-    val(r,'Hora Início')
-      .match(/^(\d{1,2}):(\d{2})/);
+  const h=val(r,'Hora Início')
+    .match(/^(\d{1,2}):(\d{2})/);
 
-  if(!m)
+  if(!h)
     return null;
 
-  return Number(m[1])*60+
-         Number(m[2]);
-
+  return Number(h[1])*60+
+         Number(h[2]);
 }
 
 
-/*
-====================================================
-ADICIONA ERRO
-====================================================
-*/
+/* ====================================================
+   IDENTIFICA O TURNO
+==================================================== */
+
+function getTurno(r){
+
+  const turno=val(r,'Turno');
+
+  /*
+    Turno X = 07:00 - 15:20
+    Turno Y = 15:20 - 23:40
+  */
+
+  if(/Turno\s*X/i.test(turno))
+    return 'X';
+
+  if(/Turno\s*Y/i.test(turno))
+    return 'Y';
+
+  return '';
+}
+
+
+/* ====================================================
+   ADICIONA ERRO
+==================================================== */
 
 function add(
   r,
@@ -470,7 +489,7 @@ function add(
     date:val(r,'Data Início'),
 
     op:
-      val(r,'Operador')||
+      val(r,'Operador') ||
       'Operador não identificado',
 
     mat:val(r,'Matrícula Operador'),
@@ -498,55 +517,264 @@ function add(
 }
 
 
-/*
-====================================================
-IDENTIFICAÇÃO DO TURNO
-====================================================
-*/
+/* ====================================================
+   ENCONTRA O APONTAMENTO DE ALMOÇO/JANTA
+==================================================== */
 
-function turnoDoOperador(os){
+function findCode(rs,codigo){
 
   /*
-  Primeiro tenta encontrar um turno explícito
+    IMPORTANTE:
+
+    Aqui usamos exatamente o campo Código.
+
+    Exemplo:
+      Código = Almoço
+      Código = Janta
+
+    "Excesso de Almoço" e "Excesso de Janta"
+    não são considerados falta de apontamento,
+    pois a própria planilha já informa o excesso.
   */
 
-  const comTurno=
-    os.find(r=>{
-      const t=val(r,'Turno');
-
-      return t &&
-        t!=='-';
-    });
-
-  if(comTurno){
-
-    const t=val(comTurno,'Turno');
-
-    if(t.includes('Turno X'))
-      return 'X';
-
-    if(t.includes('Turno Y'))
-      return 'Y';
-
-  }
-
-  return null;
+  return rs.filter(r=>
+    val(r,'Código').toLowerCase() ===
+    codigo.toLowerCase()
+  );
 
 }
 
 
-/*
-====================================================
-TROCA DE TURNO
-====================================================
-*/
+/* ====================================================
+   AUDITORIA DE ALMOÇO
+==================================================== */
 
-function auditarTrocaTurno(rs){
+function auditAlmoco(rs){
 
-  const trocas=
-    rs.filter(r=>
-      val(r,'Código')==='Troca de Turno'
+  /*
+    ALMOÇO É DO TURNO X.
+
+    Não vamos procurar almoço em operador
+    que está no Turno Y.
+  */
+
+  const turnoX=rs.filter(r=>
+    getTurno(r)==='X'
+  );
+
+  if(turnoX.length===0)
+    return;
+
+
+  const almocos=findCode(
+    turnoX,
+    'Almoço'
+  );
+
+
+  /*
+    Existe almoço.
+    Agora verificamos a duração.
+  */
+
+  if(almocos.length>0){
+
+    almocos.forEach(r=>{
+
+      const d=mins(r);
+
+      if(d!=null && d<60){
+
+        add(
+          r,
+          'Almoço',
+          'Almoço menor que 1 hora',
+          '60 minutos',
+          (d-60).toFixed(2)
+        );
+
+      }
+
+    });
+
+    return;
+  }
+
+
+  /*
+    NÃO encontrou Código = Almoço.
+
+    Precisamos identificar o operador
+    do Turno X.
+
+    Um equipamento pode ter vários operadores
+    durante o dia, então fazemos por operador.
+  */
+
+  const operadores=new Map();
+
+  turnoX.forEach(r=>{
+
+    const op=val(r,'Operador');
+
+    if(!op)
+      return;
+
+    if(!operadores.has(op))
+      operadores.set(op,[]);
+
+    operadores.get(op).push(r);
+
+  });
+
+
+  operadores.forEach(os=>{
+
+    /*
+      Verifica novamente se ESSE operador
+      possui almoço.
+    */
+
+    const possuiAlmoco=findCode(
+      os,
+      'Almoço'
     );
+
+    if(possuiAlmoco.length>0)
+      return;
+
+
+    /*
+      Se o operador realmente possui registro
+      no Turno X, mas não possui Código = Almoço,
+      então gera a falta.
+    */
+
+    const base=os[0];
+
+    add(
+      base,
+      'Almoço',
+      'Almoço não apontado'
+    );
+
+  });
+
+}
+
+
+/* ====================================================
+   AUDITORIA DE JANTA
+==================================================== */
+
+function auditJanta(rs){
+
+  /*
+    JANTA É DO TURNO Y.
+
+    Não vamos procurar janta em operador
+    do Turno X.
+  */
+
+  const turnoY=rs.filter(r=>
+    getTurno(r)==='Y'
+  );
+
+  if(turnoY.length===0)
+    return;
+
+
+  const jantas=findCode(
+    turnoY,
+    'Janta'
+  );
+
+
+  /*
+    Existe janta.
+    Verifica duração.
+  */
+
+  if(jantas.length>0){
+
+    jantas.forEach(r=>{
+
+      const d=mins(r);
+
+      if(d!=null && d<60){
+
+        add(
+          r,
+          'Janta',
+          'Janta menor que 1 hora',
+          '60 minutos',
+          (d-60).toFixed(2)
+        );
+
+      }
+
+    });
+
+    return;
+  }
+
+
+  /*
+    Não existe janta geral.
+    Verifica operador por operador.
+  */
+
+  const operadores=new Map();
+
+  turnoY.forEach(r=>{
+
+    const op=val(r,'Operador');
+
+    if(!op)
+      return;
+
+    if(!operadores.has(op))
+      operadores.set(op,[]);
+
+    operadores.get(op).push(r);
+
+  });
+
+
+  operadores.forEach(os=>{
+
+    const possuiJanta=findCode(
+      os,
+      'Janta'
+    );
+
+    if(possuiJanta.length>0)
+      return;
+
+
+    const base=os[0];
+
+    add(
+      base,
+      'Janta',
+      'Janta não apontada'
+    );
+
+  });
+
+}
+
+
+/* ====================================================
+   TROCA DE TURNO
+==================================================== */
+
+function auditTroca(rs){
+
+  const trocas=rs.filter(r=>
+    val(r,'Código').toLowerCase() ===
+    'troca de turno'.toLowerCase()
+  );
 
 
   trocas.forEach(r=>{
@@ -558,267 +786,105 @@ function auditarTrocaTurno(rs){
 
 
     /*
-    O horário correto depende do turno:
-
-    Turno X:
-    início 07:00
-    saída 15:20
-
-    Turno Y:
-    início 15:20
-    saída 23:40
+      Horários oficiais:
+      
+      07:00
+      15:20
+      23:40
     */
 
+    const expected=[
+      420,
+      920,
+      1420
+    ];
 
-    const turno=val(r,'Turno');
 
-
-    let esperado=null;
-
-
-    if(turno.includes('Turno X')){
-
-      /*
-      Se a troca pertence ao Turno X,
-      ela normalmente deve acontecer às 15:20
-      quando for encerramento do turno.
-      */
-
-      esperado=920;
-
-    }
-    else if(turno.includes('Turno Y')){
-
-      /*
-      Se pertence ao Turno Y,
-      encerramento esperado às 23:40.
-      */
-
-      esperado=1420;
-
-    }
-    else{
-
-      /*
-      Quando o turno não estiver informado,
-      identifica pelo horário mais próximo.
-      */
-
-      const horarios=[
-        420,
-        920,
-        1420
-      ];
-
-      esperado=
-        horarios.reduce(
-          (x,y)=>
-            Math.abs(y-m)<
-            Math.abs(x-m)
-              ?y
-              :x
-        );
-
-    }
+    if(expected.includes(m))
+      return;
 
 
     /*
-    Tolerância da troca de turno.
-
-    Consideramos correta se estiver
-    até 1 minuto do horário previsto.
-
-    Exemplo:
-    15:20:00 -> correto
-    15:20:30 -> correto
-    15:21:00 -> correto
+      Procura o horário oficial mais próximo.
     */
 
-    const diferenca=m-esperado;
-
-
-    if(Math.abs(diferenca)>1){
-
-      const horarioEsperado=
-        String(
-          Math.floor(esperado/60)
-        ).padStart(2,'0')+
-        ':'+
-        String(
-          esperado%60
-        ).padStart(2,'0');
-
-
-      add(
-        r,
-        'Troca de turno',
-        'Troca de turno fora do horário',
-        horarioEsperado,
-        diferenca
+    const maisProximo=
+      expected.reduce(
+        (x,y)=>
+          Math.abs(y-m) <
+          Math.abs(x-m)
+            ? y
+            : x
       );
 
-    }
+
+    const horarioEsperado=
+      String(
+        Math.floor(maisProximo/60)
+      ).padStart(2,'0')+
+      ':'+
+      String(
+        maisProximo%60
+      ).padStart(2,'0');
+
+
+    add(
+      r,
+      'Troca de turno',
+      'Troca de turno fora do horário',
+      horarioEsperado,
+      (m-maisProximo)
+    );
 
   });
 
 }
 
 
-/*
-====================================================
-ALMOÇO E JANTA
-====================================================
-*/
-
-function auditarRefeicao(os,codigo,tipo){
-
-  /*
-  SOMENTE o código exatamente igual a
-  "Almoço" ou "Janta" é considerado
-  apontamento de refeição.
-
-  Exemplos que NÃO contam:
-
-  Checklist
-  Troca de Operador
-  Efetivo
-  Acerto de Praça
-  Lubrificação
-  Aguard. Equip. p/Abastecer
-  Excesso de Almoço
-  Excesso de Janta
-  */
-
-  const refeicoes=
-    os.filter(r=>
-      val(r,'Código').toLowerCase()===
-      codigo.toLowerCase()
-    );
-
-
-  /*
-  Se existe pelo menos um apontamento real
-  da refeição, NÃO podemos gerar
-  "não apontado".
-
-  Só verificamos se ficou menor que 1 hora.
-  */
-
-  if(refeicoes.length>0){
-
-    refeicoes.forEach(r=>{
-
-      const d=mins(r);
-
-
-      /*
-      Menor que 60 minutos = ocorrência.
-
-      60 minutos ou mais = correto.
-      */
-
-      if(d!=null && d<60){
-
-        add(
-          r,
-          tipo,
-          tipo+' menor que 1 hora'
-        );
-
-      }
-
-    });
-
-    return;
-
-  }
-
-
-  /*
-  Se chegou aqui, significa que NÃO EXISTE
-  apontamento real de almoço/janta.
-  */
-
-  const base=
-    os.find(r=>{
-
-      const m=hm(r);
-
-      if(m==null)
-        return false;
-
-
-      if(tipo==='Almoço'){
-
-        /*
-        Janela usada apenas para escolher
-        uma linha representativa da ocorrência.
-        */
-
-        return m>=660 && m<840;
-
-      }
-
-
-      if(tipo==='Janta'){
-
-        return m>=1140 || m<360;
-
-      }
-
-
-      return false;
-
-    })||os[0];
-
-
-  if(base){
-
-    add(
-      base,
-      tipo,
-      tipo+' não apontado'
-    );
-
-  }
-
-}
-
-
-/*
-====================================================
-AUDITORIA PRINCIPAL
-====================================================
-*/
+/* ====================================================
+   AUDITORIA PRINCIPAL
+==================================================== */
 
 function audit(){
 
   errors=[];
 
+
+  /*
+    Primeiro agrupamos por:
+
+      Equipamento + Data
+  */
+
   const groups=new Map();
 
 
-  /*
-  Agrupa por equipamento + data
-  */
-
   rows.forEach(r=>{
 
-    const k=
-      val(r,'Equipamento')+
-      '|'+
+    const equipamento=
+      val(r,'Equipamento');
+
+    const data=
       val(r,'Data Início');
 
-    if(!groups.has(k))
-      groups.set(k,[]);
 
-    groups.get(k).push(r);
+    const key=
+      equipamento+
+      '|'+
+      data;
+
+
+    if(!groups.has(key))
+      groups.set(key,[]);
+
+
+    groups.get(key).push(r);
 
   });
 
 
   /*
-  Analisa cada equipamento/dia
+    Agora auditamos cada equipamento/dia.
   */
 
   for(const rs of groups.values()){
@@ -831,64 +897,24 @@ function audit(){
 
 
     /*
-    ================================================
-    AGRUPA POR OPERADOR
-    ================================================
+      ALMOÇO
     */
 
-    const byOp=new Map();
-
-
-    rs.forEach(r=>{
-
-      const operador=
-        val(r,'Operador');
-
-
-      if(!operador)
-        return;
-
-
-      if(!byOp.has(operador))
-        byOp.set(operador,[]);
-
-
-      byOp.get(operador).push(r);
-
-    });
+    auditAlmoco(rs);
 
 
     /*
-    ================================================
-    ALMOÇO E JANTA
-    ================================================
+      JANTA
     */
 
-    for(const os of byOp.values()){
-
-      auditarRefeicao(
-        os,
-        'Almoço',
-        'Almoço'
-      );
-
-
-      auditarRefeicao(
-        os,
-        'Janta',
-        'Janta'
-      );
-
-    }
+    auditJanta(rs);
 
 
     /*
-    ================================================
-    TROCA DE TURNO
-    ================================================
+      TROCA DE TURNO
     */
 
-    auditarTrocaTurno(rs);
+    auditTroca(rs);
 
   }
 
@@ -898,11 +924,9 @@ function audit(){
 }
 
 
-/*
-====================================================
-RENDER
-====================================================
-*/
+/* ====================================================
+   RENDER
+==================================================== */
 
 function render(){
 
@@ -1042,11 +1066,9 @@ ${x[0]}
 }
 
 
-/*
-====================================================
-PRÉVIA
-====================================================
-*/
+/* ====================================================
+   PRÉVIA
+==================================================== */
 
 function preview(){
 
@@ -1097,11 +1119,9 @@ function preview(){
 }
 
 
-/*
-====================================================
-LEITURA DO EXCEL
-====================================================
-*/
+/* ====================================================
+   LEITURA DO EXCEL
+==================================================== */
 
 $('file').onchange=async e=>{
 
@@ -1139,9 +1159,17 @@ $('file').onchange=async e=>{
       );
 
 
+    /*
+      A planilha possui:
+      
+      linha 1 = título
+      linha 2 = cabeçalho
+      linha 3 em diante = dados
+    */
+
     headers=
       (a[1]||[])
-        .map(String);
+        .map(x=>String(x).trim());
 
 
     rows=
@@ -1237,11 +1265,9 @@ $('file').onchange=async e=>{
 };
 
 
-/*
-====================================================
-FILTROS
-====================================================
-*/
+/* ====================================================
+   FILTROS
+==================================================== */
 
 [
   'fEquip',
@@ -1271,11 +1297,9 @@ $('clear').onclick=()=>{
 };
 
 
-/*
-====================================================
-EXPORTAÇÃO CSV
-====================================================
-*/
+/* ====================================================
+   EXPORTAÇÃO CSV
+==================================================== */
 
 $('export').onclick=()=>{
 
