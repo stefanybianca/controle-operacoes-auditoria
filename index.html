@@ -417,7 +417,17 @@ function mins(r){
   if(!a||!b)
     return null;
 
-  return (b-a)/60000;
+  let d=(b-a)/60000;
+
+  /*
+  Se o apontamento atravessar meia-noite,
+  corrige a diferença.
+  */
+
+  if(d<0)
+    d+=24*60;
+
+  return d;
 
 }
 
@@ -490,7 +500,294 @@ function add(
 
 /*
 ====================================================
-AUDITORIA
+IDENTIFICAÇÃO DO TURNO
+====================================================
+*/
+
+function turnoDoOperador(os){
+
+  /*
+  Primeiro tenta encontrar um turno explícito
+  */
+
+  const comTurno=
+    os.find(r=>{
+      const t=val(r,'Turno');
+
+      return t &&
+        t!=='-';
+    });
+
+  if(comTurno){
+
+    const t=val(comTurno,'Turno');
+
+    if(t.includes('Turno X'))
+      return 'X';
+
+    if(t.includes('Turno Y'))
+      return 'Y';
+
+  }
+
+  return null;
+
+}
+
+
+/*
+====================================================
+TROCA DE TURNO
+====================================================
+*/
+
+function auditarTrocaTurno(rs){
+
+  const trocas=
+    rs.filter(r=>
+      val(r,'Código')==='Troca de Turno'
+    );
+
+
+  trocas.forEach(r=>{
+
+    const m=hm(r);
+
+    if(m==null)
+      return;
+
+
+    /*
+    O horário correto depende do turno:
+
+    Turno X:
+    início 07:00
+    saída 15:20
+
+    Turno Y:
+    início 15:20
+    saída 23:40
+    */
+
+
+    const turno=val(r,'Turno');
+
+
+    let esperado=null;
+
+
+    if(turno.includes('Turno X')){
+
+      /*
+      Se a troca pertence ao Turno X,
+      ela normalmente deve acontecer às 15:20
+      quando for encerramento do turno.
+      */
+
+      esperado=920;
+
+    }
+    else if(turno.includes('Turno Y')){
+
+      /*
+      Se pertence ao Turno Y,
+      encerramento esperado às 23:40.
+      */
+
+      esperado=1420;
+
+    }
+    else{
+
+      /*
+      Quando o turno não estiver informado,
+      identifica pelo horário mais próximo.
+      */
+
+      const horarios=[
+        420,
+        920,
+        1420
+      ];
+
+      esperado=
+        horarios.reduce(
+          (x,y)=>
+            Math.abs(y-m)<
+            Math.abs(x-m)
+              ?y
+              :x
+        );
+
+    }
+
+
+    /*
+    Tolerância da troca de turno.
+
+    Consideramos correta se estiver
+    até 1 minuto do horário previsto.
+
+    Exemplo:
+    15:20:00 -> correto
+    15:20:30 -> correto
+    15:21:00 -> correto
+    */
+
+    const diferenca=m-esperado;
+
+
+    if(Math.abs(diferenca)>1){
+
+      const horarioEsperado=
+        String(
+          Math.floor(esperado/60)
+        ).padStart(2,'0')+
+        ':'+
+        String(
+          esperado%60
+        ).padStart(2,'0');
+
+
+      add(
+        r,
+        'Troca de turno',
+        'Troca de turno fora do horário',
+        horarioEsperado,
+        diferenca
+      );
+
+    }
+
+  });
+
+}
+
+
+/*
+====================================================
+ALMOÇO E JANTA
+====================================================
+*/
+
+function auditarRefeicao(os,codigo,tipo){
+
+  /*
+  SOMENTE o código exatamente igual a
+  "Almoço" ou "Janta" é considerado
+  apontamento de refeição.
+
+  Exemplos que NÃO contam:
+
+  Checklist
+  Troca de Operador
+  Efetivo
+  Acerto de Praça
+  Lubrificação
+  Aguard. Equip. p/Abastecer
+  Excesso de Almoço
+  Excesso de Janta
+  */
+
+  const refeicoes=
+    os.filter(r=>
+      val(r,'Código').toLowerCase()===
+      codigo.toLowerCase()
+    );
+
+
+  /*
+  Se existe pelo menos um apontamento real
+  da refeição, NÃO podemos gerar
+  "não apontado".
+
+  Só verificamos se ficou menor que 1 hora.
+  */
+
+  if(refeicoes.length>0){
+
+    refeicoes.forEach(r=>{
+
+      const d=mins(r);
+
+
+      /*
+      Menor que 60 minutos = ocorrência.
+
+      60 minutos ou mais = correto.
+      */
+
+      if(d!=null && d<60){
+
+        add(
+          r,
+          tipo,
+          tipo+' menor que 1 hora'
+        );
+
+      }
+
+    });
+
+    return;
+
+  }
+
+
+  /*
+  Se chegou aqui, significa que NÃO EXISTE
+  apontamento real de almoço/janta.
+  */
+
+  const base=
+    os.find(r=>{
+
+      const m=hm(r);
+
+      if(m==null)
+        return false;
+
+
+      if(tipo==='Almoço'){
+
+        /*
+        Janela usada apenas para escolher
+        uma linha representativa da ocorrência.
+        */
+
+        return m>=660 && m<840;
+
+      }
+
+
+      if(tipo==='Janta'){
+
+        return m>=1140 || m<360;
+
+      }
+
+
+      return false;
+
+    })||os[0];
+
+
+  if(base){
+
+    add(
+      base,
+      tipo,
+      tipo+' não apontado'
+    );
+
+  }
+
+}
+
+
+/*
+====================================================
+AUDITORIA PRINCIPAL
 ====================================================
 */
 
@@ -502,7 +799,7 @@ function audit(){
 
 
   /*
-  Agrupa equipamento + data
+  Agrupa por equipamento + data
   */
 
   rows.forEach(r=>{
@@ -569,146 +866,18 @@ function audit(){
 
     for(const os of byOp.values()){
 
-
-      /*
-      ----------------------------------------------
-      ALMOÇO
-      ----------------------------------------------
-
-      Procuramos EXATAMENTE:
-
-      Código = Almoço
-
-      "Excesso de Almoço" é ignorado.
-      */
-
-      const almocos=
-        os.filter(r=>
-          val(r,'Código')==='Almoço'
-        );
+      auditarRefeicao(
+        os,
+        'Almoço',
+        'Almoço'
+      );
 
 
-      /*
-      Se não houver almoço,
-      gera um único erro.
-      */
-
-      if(almocos.length===0){
-
-        const base=
-          os.find(r=>{
-            const m=hm(r);
-
-            return (
-              m!=null &&
-              m>=660 &&
-              m<780
-            );
-          })||os[0];
-
-
-        if(base){
-
-          add(
-            base,
-            'Almoço',
-            'Almoço não apontado'
-          );
-
-        }
-
-      }
-
-
-      /*
-      Se houver almoço,
-      verifica duração.
-      */
-
-      almocos.forEach(r=>{
-
-        const d=mins(r);
-
-
-        if(d!=null && d<60){
-
-          add(
-            r,
-            'Almoço',
-            'Almoço menor que 1 hora'
-          );
-
-        }
-
-      });
-
-
-      /*
-      ----------------------------------------------
-      JANTA
-      ----------------------------------------------
-      */
-
-      const jantas=
-        os.filter(r=>
-          val(r,'Código')==='Janta'
-        );
-
-
-      /*
-      Se não houver janta,
-      gera um único erro.
-      */
-
-      if(jantas.length===0){
-
-        const base=
-          os.find(r=>{
-            const m=hm(r);
-
-            return (
-              m!=null &&
-              m>=1140 &&
-              m<1260
-            );
-
-          })||os[0];
-
-
-        if(base){
-
-          add(
-            base,
-            'Janta',
-            'Janta não apontada'
-          );
-
-        }
-
-      }
-
-
-      /*
-      Se houver janta,
-      verifica duração.
-      */
-
-      jantas.forEach(r=>{
-
-        const d=mins(r);
-
-
-        if(d!=null && d<60){
-
-          add(
-            r,
-            'Janta',
-            'Janta menor que 1 hora'
-          );
-
-        }
-
-      });
+      auditarRefeicao(
+        os,
+        'Janta',
+        'Janta'
+      );
 
     }
 
@@ -719,73 +888,7 @@ function audit(){
     ================================================
     */
 
-    rs
-      .filter(r=>
-        val(r,'Código')==='Troca de Turno'
-      )
-      .forEach(r=>{
-
-        const m=hm(r);
-
-        if(m==null)
-          return;
-
-
-        /*
-        Horários corretos:
-
-        07:00
-        15:20
-        23:40
-        */
-
-        const expected=[
-          420,
-          920,
-          1420
-        ];
-
-
-        /*
-        Considera correto somente quando
-        o horário bate exatamente.
-        */
-
-        if(!expected.includes(m)){
-
-          const maisProximo=
-            expected.reduce(
-              (x,y)=>
-                Math.abs(y-m)<
-                Math.abs(x-m)
-                  ?y
-                  :x
-            );
-
-
-          const horarioEsperado=
-            String(
-              Math.floor(
-                maisProximo/60
-              )
-            ).padStart(2,'0')+
-            ':'+
-            String(
-              maisProximo%60
-            ).padStart(2,'0');
-
-
-          add(
-            r,
-            'Troca de turno',
-            'Troca de turno fora do horário',
-            horarioEsperado,
-            m-maisProximo
-          );
-
-        }
-
-      });
+    auditarTrocaTurno(rs);
 
   }
 
