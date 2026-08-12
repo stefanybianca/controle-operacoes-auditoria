@@ -177,6 +177,7 @@ th{
   padding:12px;
   margin-top:12px;
   font-size:13px;
+  line-height:1.6;
 }
 
 </style>
@@ -248,43 +249,38 @@ Resumo da auditoria
 <div class="card">
 
 <h2>
-Regras utilizadas
+Regras da auditoria
 </h2>
 
 <div class="info-box">
 
-<b>07:00 – 15:20:</b>
-Almoço
+<b>Turno X — 07:00 às 15:20</b><br>
+Refeição: <b>Almoço</b><br>
+Janela: <b>11:00 às 13:00</b>
 
 <br><br>
 
-<b>15:20 – 23:40:</b>
-Janta
+<b>Turno Y — 15:20 às 23:40</b><br>
+Refeição: <b>Janta</b><br>
+Janela: <b>19:00 às 21:00</b>
 
 <br><br>
 
-<b>23:40 – 07:00:</b>
-Lanche
+<b>Turno 23:40 às 07:00</b><br>
+Refeição: <b>Lanche</b><br>
+Janela: <b>01:00 às 03:00</b>
 
 <br><br>
 
-<b>Checklist:</b>
-operador entrou na máquina
+<b>Checklist:</b> operador entrou na máquina.<br>
 
-<br>
+<b>Efetivo:</b> operador está trabalhando.<br>
 
-<b>Efetivo:</b>
-operador trabalhando
+<b>Corretiva:</b> equipamento em manutenção — não gera falta de refeição.<br>
 
-<br>
+<b>Falta de Operador:</b> não havia operador — não gera falta de refeição.<br>
 
-<b>Corretiva:</b>
-equipamento em manutenção — não gera falta
-
-<br>
-
-<b>Falta de Operador:</b>
-não havia operador — não gera falta
+<b>Inativo:</b> não gera falta de refeição.
 
 </div>
 
@@ -661,7 +657,7 @@ function hm(r){
 
 
 /* =====================================================
-   IDENTIFICA O TURNO
+   TURNO
 ===================================================== */
 
 function getTurno(r){
@@ -672,11 +668,6 @@ function getTurno(r){
     );
 
 
-  /*
-    Turno X
-    07:00 - 15:20
-  */
-
   if(
     turno.includes('turno x') ||
     turno.includes('07:00-15:20')
@@ -686,11 +677,6 @@ function getTurno(r){
 
   }
 
-
-  /*
-    Turno Y
-    15:20 - 23:40
-  */
 
   if(
     turno.includes('turno y') ||
@@ -703,13 +689,14 @@ function getTurno(r){
 
 
   /*
-    Turno Z / noite
-    23:40 - 07:00
+    Aceita diferentes formas
+    para o turno da noite.
   */
 
   if(
     turno.includes('turno z') ||
-    turno.includes('23:40-07:00')
+    turno.includes('23:40-07:00') ||
+    turno.includes('23:40 - 07:00')
   ){
 
     return 'Z';
@@ -723,7 +710,7 @@ function getTurno(r){
 
 
 /* =====================================================
-   REFEIÇÃO ESPERADA PELO TURNO
+   REFEIÇÃO DO TURNO
 ===================================================== */
 
 function refeicaoDoTurno(turno){
@@ -746,10 +733,139 @@ function refeicaoDoTurno(turno){
 
 
 /* =====================================================
-   VERIFICA SE O REGISTRO REPRESENTA TRABALHO
+   JANELA DA REFEIÇÃO
 ===================================================== */
 
-function registroValidoParaRefeicao(r){
+function janelaRefeicao(turno){
+
+  /*
+    Tudo em minutos desde meia-noite.
+  */
+
+  if(turno === 'X'){
+
+    return {
+      inicio:660,   // 11:00
+      fim:780       // 13:00
+    };
+
+  }
+
+
+  if(turno === 'Y'){
+
+    return {
+      inicio:1140,  // 19:00
+      fim:1260      // 21:00
+    };
+
+  }
+
+
+  if(turno === 'Z'){
+
+    return {
+      inicio:60,    // 01:00
+      fim:180       // 03:00
+    };
+
+  }
+
+
+  return null;
+
+}
+
+
+/* =====================================================
+   MINUTO DA HORA
+===================================================== */
+
+function minutosDaHora(time){
+
+  const m =
+    String(time || '')
+      .match(/^(\d{1,2}):(\d{2})/);
+
+
+  if(!m)
+    return null;
+
+
+  return (
+    Number(m[1]) * 60 +
+    Number(m[2])
+  );
+
+}
+
+
+/* =====================================================
+   VERIFICA SE UM REGISTRO ATRAVESSA A JANELA
+===================================================== */
+
+function trabalhaNaJanela(
+  r,
+  inicioJanela,
+  fimJanela
+){
+
+  let inicio =
+    minutosDaHora(
+      val(r,'Hora Início')
+    );
+
+
+  let fim =
+    minutosDaHora(
+      val(r,'Hora Fim')
+    );
+
+
+  if(
+    inicio == null ||
+    fim == null
+  ){
+
+    return false;
+
+  }
+
+
+  /*
+    Registro normal.
+  */
+
+  if(fim >= inicio){
+
+    return (
+      inicio < fimJanela &&
+      fim > inicioJanela
+    );
+
+  }
+
+
+  /*
+    Registro atravessou meia-noite.
+
+    Exemplo:
+    23:40 -> 02:00
+  */
+
+  return (
+    inicio < fimJanela ||
+    fim > inicioJanela
+  );
+
+}
+
+
+/* =====================================================
+   CÓDIGOS QUE SIGNIFICAM QUE NÃO HÁ TRABALHO
+===================================================== */
+
+function ehBloqueadoParaRefeicao(r){
 
   const codigo =
     normalize(
@@ -759,24 +875,21 @@ function registroValidoParaRefeicao(r){
 
   /*
     FALTA DE OPERADOR
-
-    Não gera erro de refeição.
   */
 
   if(
-    codigo.includes('falta de operador')
+    codigo.includes(
+      'falta de operador'
+    )
   ){
 
-    return false;
+    return true;
 
   }
 
 
   /*
     CORRETIVA
-
-    Equipamento está em manutenção.
-    Não gera erro de refeição.
   */
 
   if(
@@ -784,35 +897,51 @@ function registroValidoParaRefeicao(r){
     codigo.includes('corretiva')
   ){
 
-    return false;
+    return true;
 
   }
 
 
   /*
     INATIVO
-
-    Não consideramos como operador trabalhando.
   */
 
   if(
     codigo === 'inativo'
   ){
 
-    return false;
+    return true;
 
   }
 
 
-  /*
-    CHECKLIST = operador entrou
-    EFETIVO   = operador trabalhando
+  return false;
 
-    Ambos são registros válidos.
-  */
+}
+
+
+/* =====================================================
+   CÓDIGOS QUE SIGNIFICAM TRABALHO
+===================================================== */
+
+function ehTrabalho(r){
+
+  const codigo =
+    normalize(
+      val(r,'Código')
+    );
+
 
   if(
-    codigo === 'checklist' ||
+    codigo === 'checklist'
+  ){
+
+    return true;
+
+  }
+
+
+  if(
     codigo === 'efetivo'
   ){
 
@@ -821,20 +950,37 @@ function registroValidoParaRefeicao(r){
   }
 
 
+  return false;
+
+}
+
+
+/* =====================================================
+   VERIFICA APONTAMENTO DA REFEIÇÃO
+===================================================== */
+
+function ehApontamentoRefeicao(
+  r,
+  refeicao
+){
+
   /*
-    Outros códigos que tenham operador
-    também podem representar operação.
+    IMPORTANTE:
+
+    A refeição está na coluna TIPO.
+
+    Exemplo:
+
+    Tipo = Almoço
+    Código = Checklist
   */
 
-  const operador =
-    val(r,'Operador');
-
-
-  if(operador)
-    return true;
-
-
-  return false;
+  return (
+    normalize(
+      val(r,'Tipo')
+    ) ===
+    normalize(refeicao)
+  );
 
 }
 
@@ -898,57 +1044,18 @@ function add(
 
 
 /* =====================================================
-   IDENTIFICA REFEIÇÃO
+   AUDITORIA DE REFEIÇÕES
 ===================================================== */
 
-function ehRefeicao(r,nome){
-
-  return (
-    normalize(
-      val(r,'Tipo')
-    ) ===
-    normalize(nome)
-  );
-
-}
-
-
-/* =====================================================
-   IDENTIFICA REGISTRO DE AUSÊNCIA
-===================================================== */
-
-function ehAusenciaOperador(r){
-
-  const codigo =
-    normalize(
-      val(r,'Código')
-    );
-
-
-  return (
-    codigo.includes('falta de operador') ||
-    codigo === 'corretiva' ||
-    codigo.includes('corretiva')
-  );
-
-}
-
-
-/* =====================================================
-   AUDITORIA DE REFEIÇÃO
-===================================================== */
-
-function auditRefeicao(rs){
+function auditRefeicoes(rs){
 
   /*
-    Aqui analisamos por OPERADOR.
+    Criamos grupos por:
 
-    Isso é muito importante.
+    OPERADOR + TURNO
 
-    Um equipamento pode passar por vários
-    operadores durante o dia.
+    para não misturar operadores.
   */
-
 
   const grupos =
     new Map();
@@ -966,23 +1073,38 @@ function auditRefeicao(rs){
 
     /*
       Sem operador ou sem turno:
-      não conseguimos cobrar refeição.
-    */
-
-    if(!operador || !turno)
-      return;
-
-
-    /*
-      Verifica se esse registro realmente
-      representa operação.
-
-      Falta de operador e corretiva
-      ficam fora.
+      não cobramos refeição.
     */
 
     if(
-      !registroValidoParaRefeicao(r)
+      !operador ||
+      !turno
+    ){
+
+      return;
+
+    }
+
+
+    /*
+      Só trabalhamos com
+      Checklist e Efetivo.
+
+      Corretiva, Falta de Operador
+      e Inativo ficam fora.
+    */
+
+    if(
+      ehBloqueadoParaRefeicao(r)
+    ){
+
+      return;
+
+    }
+
+
+    if(
+      !ehTrabalho(r)
     ){
 
       return;
@@ -1004,7 +1126,9 @@ function auditRefeicao(rs){
       turno;
 
 
-    if(!grupos.has(key)){
+    if(
+      !grupos.has(key)
+    ){
 
       grupos.set(
         key,
@@ -1028,7 +1152,7 @@ function auditRefeicao(rs){
 
 
   /*
-    Agora analisamos cada operador.
+    Agora verificamos cada operador.
   */
 
   for(
@@ -1043,41 +1167,39 @@ function auditRefeicao(rs){
     } = grupo;
 
 
+    const janela =
+      janelaRefeicao(turno);
+
+
+    if(!janela)
+      continue;
+
+
     /*
-      Verifica se existe apontamento
-      da refeição correta.
+      PRIMEIRO:
 
-      ATENÇÃO:
-
-      A refeição está na coluna TIPO.
-
-      Exemplo:
-
-      Tipo = Almoço
-      Código = Checklist
-
-      Portanto não devemos procurar
-      "Almoço" na coluna Código.
+      Descobrimos se o operador
+      trabalhou durante a janela
+      da refeição.
     */
 
-    const apontamentos =
-      rs.filter(r =>
-
-        val(r,'Operador') === operador &&
-
-        getTurno(r) === turno &&
-
-        ehRefeicao(r,refeicao)
-
+    const trabalhou =
+      registros.some(
+        r =>
+          trabalhaNaJanela(
+            r,
+            janela.inicio,
+            janela.fim
+          )
       );
 
 
     /*
-      Se encontrou a refeição,
-      não existe falta.
+      Se não trabalhou durante
+      a janela, não existe erro.
     */
 
-    if(apontamentos.length > 0){
+    if(!trabalhou){
 
       continue;
 
@@ -1085,13 +1207,68 @@ function auditRefeicao(rs){
 
 
     /*
-      Usa o primeiro registro válido
-      do operador como referência
-      para mostrar o erro.
+      SEGUNDO:
+
+      Procuramos o apontamento
+      da refeição correta.
+
+      O operador precisa ter
+      o mesmo nome.
+
+      A refeição fica na coluna TIPO.
+    */
+
+    const possuiRefeicao =
+      rs.some(
+        r =>
+
+          val(r,'Operador') ===
+          operador &&
+
+          ehApontamentoRefeicao(
+            r,
+            refeicao
+          )
+
+      );
+
+
+    /*
+      Se possui refeição,
+      está correto.
+    */
+
+    if(possuiRefeicao){
+
+      continue;
+
+    }
+
+
+    /*
+      Não possui refeição.
+
+      Agora pegamos o registro
+      que estava trabalhando dentro
+      da janela.
+
+      É esse registro que será
+      mostrado no relatório.
     */
 
     const base =
-      registros[0];
+      registros.find(
+        r =>
+          trabalhaNaJanela(
+            r,
+            janela.inicio,
+            janela.fim
+          )
+      );
+
+
+    if(!base)
+      continue;
 
 
     add(
@@ -1107,19 +1284,22 @@ function auditRefeicao(rs){
 
 
 /* =====================================================
-   AUDITORIA DE TROCA DE TURNO
+   TROCA DE TURNO
 ===================================================== */
 
 function auditTroca(rs){
 
+  /*
+    Troca de turno está na coluna TIPO.
+  */
+
   const trocas =
-    rs.filter(r =>
-
-      normalize(
-        val(r,'Tipo')
-      ) ===
-      'troca de turno'
-
+    rs.filter(
+      r =>
+        normalize(
+          val(r,'Tipo')
+        ) ===
+        'troca de turno'
     );
 
 
@@ -1148,11 +1328,6 @@ function auditTroca(rs){
     ];
 
 
-    /*
-      Se estiver exatamente no horário,
-      está correto.
-    */
-
     if(
       expected.includes(m)
     ){
@@ -1162,18 +1337,12 @@ function auditTroca(rs){
     }
 
 
-    /*
-      Descobre o horário oficial
-      mais próximo.
-    */
-
     const maisProximo =
       expected.reduce(
         (x,y) =>
 
           Math.abs(y-m) <
           Math.abs(x-m)
-
             ? y
             : x
       );
@@ -1198,7 +1367,7 @@ function auditTroca(rs){
       'Troca de turno',
       'Troca de turno fora do horário',
       horarioEsperado,
-      (m - maisProximo)
+      m - maisProximo
     );
 
   });
@@ -1216,10 +1385,9 @@ function audit(){
 
 
   /*
-    Agrupamento:
+    Agrupa por:
 
     Equipamento + Data
-
   */
 
   const groups =
@@ -1229,11 +1397,17 @@ function audit(){
   rows.forEach(r=>{
 
     const equipamento =
-      val(r,'Equipamento');
+      val(
+        r,
+        'Equipamento'
+      );
 
 
     const data =
-      val(r,'Data Início');
+      val(
+        r,
+        'Data Início'
+      );
 
 
     const key =
@@ -1242,7 +1416,9 @@ function audit(){
       data;
 
 
-    if(!groups.has(key)){
+    if(
+      !groups.has(key)
+    ){
 
       groups.set(
         key,
@@ -1269,12 +1445,15 @@ function audit(){
 
     rs.sort(
       (a,b) =>
+
         (
-          dateObj(a)?.getTime() || 0
+          dateObj(a)?.getTime() ||
+          0
         ) -
 
         (
-          dateObj(b)?.getTime() || 0
+          dateObj(b)?.getTime() ||
+          0
         )
     );
 
@@ -1283,11 +1462,11 @@ function audit(){
       REFEIÇÕES
     */
 
-    auditRefeicao(rs);
+    auditRefeicoes(rs);
 
 
     /*
-      TROCA DE TURNO
+      TROCAS DE TURNO
     */
 
     auditTroca(rs);
@@ -1301,7 +1480,7 @@ function audit(){
 
 
 /* =====================================================
-   RENDERIZAÇÃO
+   RENDER
 ===================================================== */
 
 function render(){
@@ -1320,15 +1499,16 @@ function render(){
 
 
   filtered =
-    errors.filter(e =>
+    errors.filter(
+      e =>
 
-      (!a || e.equip === a) &&
+        (!a || e.equip === a) &&
 
-      (!b || e.op === b) &&
+        (!b || e.op === b) &&
 
-      (!c || e.date === c) &&
+        (!c || e.date === c) &&
 
-      (!d || e.type === d)
+        (!d || e.type === d)
 
     );
 
@@ -1342,7 +1522,9 @@ function render(){
 
   $('errors').innerHTML =
 
-    filtered.map(e => `
+    filtered
+      .map(
+        e => `
 
 <tr>
 
@@ -1408,7 +1590,9 @@ ${esc(e.diff)}
 
 </tr>
 
-`).join('');
+`
+      )
+      .join('');
 
 
   /*
@@ -1512,7 +1696,8 @@ ${esc(e.diff)}
 
   ]
 
-  .map(x => `
+  .map(
+    x => `
 
 <div class="metric">
 
@@ -1524,7 +1709,8 @@ ${x[1]}
 
 </div>
 
-`)
+`
+  )
 
   .join('');
 
@@ -1567,35 +1753,31 @@ function preview(){
 
     rows
       .slice(0,10)
-      .map(r =>
+      .map(
+        r =>
 
-        '<tr>' +
+          '<tr>' +
 
-        headers
-          .map(
-            x =>
-              '<td>' +
-              esc(
-                val(r,x)
-              ) +
-              '</td>'
-          )
-          .join('') +
+          headers
+            .map(
+              x =>
+                '<td>' +
+                esc(
+                  val(r,x)
+                ) +
+                '</td>'
+            )
+            .join('') +
 
-        '</tr>'
-
+          '</tr>'
       )
       .join('');
 
 
   $('preview').innerHTML =
-
     h +
-
     '<tbody>' +
-
     b +
-
     '</tbody>';
 
 }
@@ -1605,175 +1787,182 @@ function preview(){
    LEITURA DO EXCEL
 ===================================================== */
 
-$('file').onchange = async e => {
+$('file').onchange =
+  async e => {
 
-  const f =
-    e.target.files[0];
-
-
-  if(!f)
-    return;
+    const f =
+      e.target.files[0];
 
 
-  try{
-
-    const wb =
-      XLSX.read(
-        await f.arrayBuffer(),
-        {
-          cellDates:false,
-          raw:false
-        }
-      );
+    if(!f)
+      return;
 
 
-    const ws =
-      wb.Sheets[
-        wb.SheetNames[0]
-      ];
+    try{
 
-
-    const a =
-      XLSX.utils.sheet_to_json(
-        ws,
-        {
-          header:1,
-          defval:'',
-          raw:false
-        }
-      );
-
-
-    /*
-      Estrutura esperada:
-
-      linha 1 = título
-
-      linha 2 = cabeçalho
-
-      linha 3 em diante = dados
-    */
-
-    headers =
-      (a[1] || [])
-        .map(
-          x =>
-            String(x).trim()
+      const wb =
+        XLSX.read(
+          await f.arrayBuffer(),
+          {
+            cellDates:false,
+            raw:false
+          }
         );
 
 
-    rows =
-      a
-        .slice(2)
-
-        .filter(
-          r =>
-            r.some(
-              x =>
-                String(x).trim() !== ''
-            )
-        )
-
-        .map(r => {
-
-          const o = {};
+      const ws =
+        wb.Sheets[
+          wb.SheetNames[0]
+        ];
 
 
-          headers.forEach(
-            (h,i) => {
+      const a =
+        XLSX.utils.sheet_to_json(
+          ws,
+          {
+            header:1,
+            defval:'',
+            raw:false
+          }
+        );
 
-              o[h] =
-                r[i] ?? '';
+
+      /*
+        Estrutura da planilha:
+
+        linha 1 = título
+
+        linha 2 = cabeçalho
+
+        linha 3 em diante = dados
+      */
+
+      headers =
+        (a[1] || [])
+          .map(
+            x =>
+              String(x).trim()
+          );
+
+
+      rows =
+        a
+          .slice(2)
+
+          .filter(
+            r =>
+              r.some(
+                x =>
+                  String(x).trim() !== ''
+              )
+          )
+
+          .map(
+            r => {
+
+              const o = {};
+
+
+              headers.forEach(
+                (h,i) => {
+
+                  o[h] =
+                    r[i] ?? '';
+
+                }
+              );
+
+
+              return o;
 
             }
           );
 
 
-          return o;
-
-        });
-
-
-    $('status').className =
-      'status success';
+      $('status').className =
+        'status success';
 
 
-    $('status').textContent =
-      'Planilha carregada com sucesso: ' +
-      f.name;
+      $('status').textContent =
+        'Planilha carregada com sucesso: ' +
+        f.name;
 
 
-    $('dashboard')
-      .classList
-      .remove('hidden');
+      $('dashboard')
+        .classList
+        .remove('hidden');
 
 
-    preview();
+      preview();
 
 
-    opts(
-      'fEquip',
-      rows.map(
-        r =>
-          val(
-            r,
-            'Equipamento'
-          )
-      )
-    );
+      opts(
+        'fEquip',
+        rows.map(
+          r =>
+            val(
+              r,
+              'Equipamento'
+            )
+        )
+      );
 
 
-    opts(
-      'fOp',
-      rows.map(
-        r =>
-          val(
-            r,
-            'Operador'
-          )
-      )
-    );
+      opts(
+        'fOp',
+        rows.map(
+          r =>
+            val(
+              r,
+              'Operador'
+            )
+        )
+      );
 
 
-    opts(
-      'fDate',
-      rows.map(
-        r =>
-          val(
-            r,
-            'Data Início'
-          )
-      )
-    );
+      opts(
+        'fDate',
+        rows.map(
+          r =>
+            val(
+              r,
+              'Data Início'
+            )
+        )
+      );
 
 
-    audit();
+      /*
+        EXECUTA AUDITORIA
+      */
+
+      audit();
 
 
-    opts(
-      'fType',
-      errors.map(
-        e =>
-          e.type
-      )
-    );
+      opts(
+        'fType',
+        errors.map(
+          e =>
+            e.type
+        )
+      );
 
 
-  }
+    }
 
-  catch(err){
+    catch(err){
 
-    $('status').className =
-      'status error';
+      $('status').className =
+        'status error';
 
 
-    $('status').textContent =
-      'Erro ao ler a planilha: ' +
-      err.message;
+      $('status').textContent =
+        'Erro ao ler a planilha: ' +
+        err.message;
 
-  }
+    }
 
-};
+  };
 
 
 /* =====================================================
@@ -1801,154 +1990,156 @@ $('file').onchange = async e => {
    LIMPAR FILTROS
 ===================================================== */
 
-$('clear').onclick = () => {
+$('clear').onclick =
+  () => {
 
-  [
-    'fEquip',
-    'fOp',
-    'fDate',
-    'fType'
-  ]
+    [
+      'fEquip',
+      'fOp',
+      'fDate',
+      'fType'
+    ]
 
-  .forEach(
-    id =>
-      $(id).value = ''
-  );
-
-
-  render();
-
-};
-
-
-/* =====================================================
-   EXPORTAÇÃO CSV
-===================================================== */
-
-$('export').onclick = () => {
-
-  const c = [
-
-    'Equipamento',
-
-    'Tipo Equipamento',
-
-    'Data',
-
-    'Operador',
-
-    'Matrícula',
-
-    'Turno',
-
-    'Tipo',
-
-    'Código',
-
-    'Início',
-
-    'Fim',
-
-    'Duração',
-
-    'Motivo',
-
-    'Esperado',
-
-    'Diferença'
-
-  ];
-
-
-  const l = [
-
-    c,
-
-    ...filtered.map(
-      e => [
-
-        e.equip,
-
-        e.tipoEq,
-
-        e.date,
-
-        e.op,
-
-        e.mat,
-
-        e.turn,
-
-        e.type,
-
-        e.codigo,
-
-        e.ini,
-
-        e.fim,
-
-        e.dur ?? '',
-
-        e.motivo,
-
-        e.expected,
-
-        e.diff
-
-      ]
-    )
-
-  ];
-
-
-  const csv =
-
-    '\ufeff' +
-
-    l
-      .map(
-        r =>
-          r
-            .map(
-              x =>
-                '"' +
-                String(
-                  x ?? ''
-                )
-                .replaceAll(
-                  '"',
-                  '""'
-                ) +
-                '"'
-            )
-            .join(';')
-      )
-      .join('\n');
-
-
-  const a =
-    document.createElement('a');
-
-
-  a.href =
-    URL.createObjectURL(
-      new Blob(
-        [csv],
-        {
-          type:
-            'text/csv;charset=utf-8;'
-        }
-      )
+    .forEach(
+      id =>
+        $(id).value = ''
     );
 
 
-  a.download =
-    'relatorio_auditoria.csv';
+    render();
+
+  };
 
 
-  a.click();
+/* =====================================================
+   EXPORTAR CSV
+===================================================== */
 
-};
+$('export').onclick =
+  () => {
+
+    const c = [
+
+      'Equipamento',
+
+      'Tipo Equipamento',
+
+      'Data',
+
+      'Operador',
+
+      'Matrícula',
+
+      'Turno',
+
+      'Tipo',
+
+      'Código',
+
+      'Início',
+
+      'Fim',
+
+      'Duração',
+
+      'Motivo',
+
+      'Esperado',
+
+      'Diferença'
+
+    ];
+
+
+    const l = [
+
+      c,
+
+      ...filtered.map(
+        e => [
+
+          e.equip,
+
+          e.tipoEq,
+
+          e.date,
+
+          e.op,
+
+          e.mat,
+
+          e.turn,
+
+          e.type,
+
+          e.codigo,
+
+          e.ini,
+
+          e.fim,
+
+          e.dur ?? '',
+
+          e.motivo,
+
+          e.expected,
+
+          e.diff
+
+        ]
+      )
+
+    ];
+
+
+    const csv =
+
+      '\ufeff' +
+
+      l
+        .map(
+          r =>
+            r
+              .map(
+                x =>
+                  '"' +
+                  String(
+                    x ?? ''
+                  )
+                  .replaceAll(
+                    '"',
+                    '""'
+                  ) +
+                  '"'
+              )
+              .join(';')
+        )
+        .join('\n');
+
+
+    const a =
+      document.createElement('a');
+
+
+    a.href =
+      URL.createObjectURL(
+        new Blob(
+          [csv],
+          {
+            type:
+              'text/csv;charset=utf-8;'
+          }
+        )
+      );
+
+
+    a.download =
+      'relatorio_auditoria.csv';
+
+
+    a.click();
+
+  };
 
 
 </script>
@@ -1956,3 +2147,4 @@ $('export').onclick = () => {
 </body>
 
 </html>
+
