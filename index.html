@@ -261,18 +261,26 @@ Janta: <b>19:00 às 21:00</b>
 
 <br><br>
 
-<b>Turno da noite — 23:40 às 07:00</b><br>
+<b>Turno Z — 23:40 às 07:00</b><br>
 Lanche: <b>01:00 às 03:00</b>
 
 <br><br>
 
-<b>Checklist:</b> entrada na máquina.<br>
+<b>Checklist:</b> operador acabou de entrar na máquina.
 
-<b>Efetivo:</b> operador trabalhando.<br>
+<br>
 
-<b>Corretiva:</b> equipamento em manutenção — não cobra refeição.<br>
+<b>Efetivo:</b> operador está trabalhando.
 
-<b>Falta de Operador:</b> não cobra refeição.<br>
+<br>
+
+<b>Corretiva:</b> equipamento está em manutenção — não cobra refeição.
+
+<br>
+
+<b>Falta de Operador:</b> não cobra refeição.
+
+<br>
 
 <b>Inativo:</b> não cobra refeição.
 
@@ -665,7 +673,7 @@ function getTurno(r){
 
 
 /* =====================================================
-   CONFIGURAÇÃO DAS REFEIÇÕES
+   REGRAS DAS REFEIÇÕES
 ===================================================== */
 
 const REFEICOES = {
@@ -692,7 +700,7 @@ const REFEICOES = {
 
 
 /* =====================================================
-   CÓDIGOS QUE NÃO REPRESENTAM TRABALHO
+   SITUAÇÕES QUE NÃO GERAM COBRANÇA
 ===================================================== */
 
 function naoCobraRefeicao(r){
@@ -737,7 +745,7 @@ function naoCobraRefeicao(r){
 
 
 /* =====================================================
-   CÓDIGOS DE TRABALHO
+   REGISTRO DE TRABALHO
 ===================================================== */
 
 function ehTrabalho(r){
@@ -747,11 +755,6 @@ function ehTrabalho(r){
       val(r,'Código')
     );
 
-
-  /*
-    Checklist = entrou na máquina
-    Efetivo = está trabalhando
-  */
 
   return (
     codigo === 'checklist' ||
@@ -789,13 +792,6 @@ function intervaloRegistro(r){
   }
 
 
-  /*
-    Registro atravessando meia-noite.
-
-    Exemplo:
-    23:50 -> 02:00
-  */
-
   if(fim < inicio){
 
     fim += 1440;
@@ -812,7 +808,7 @@ function intervaloRegistro(r){
 
 
 /* =====================================================
-   VERIFICA SE REGISTRO ATINGE JANELA
+   VERIFICA SE O REGISTRO CRUZA UMA JANELA
 ===================================================== */
 
 function cruzaJanela(
@@ -837,31 +833,10 @@ function cruzaJanela(
 
 
   /*
-    Caso seja o lanche da madrugada,
-    a janela fica em 01:00–03:00.
-
-    Um registro como:
-
-    23:40 -> 02:00
-
-    precisa ser interpretado
-    corretamente.
-  */
-
-  if(
-    janelaInicio < 180 &&
-    inicio >= 1380
-  ){
-
-    fim += 0;
-
-  }
-
-
-  /*
-    Para facilitar a comparação,
-    também verificamos a janela
-    deslocada para o dia seguinte.
+    Para registros da madrugada,
+    como 23:40 -> 02:00,
+    precisamos testar também
+    a janela no dia seguinte.
   */
 
   const janelas = [
@@ -891,25 +866,35 @@ function cruzaJanela(
 
 
 /* =====================================================
-   APONTAMENTO DA REFEIÇÃO
+   IDENTIFICA ALMOÇO/JANTA/LANCHE
 ===================================================== */
 
 function ehRefeicao(r,nome){
 
+  const tipo =
+    normalizar(
+      val(r,'Tipo')
+    );
+
+  const codigo =
+    normalizar(
+      val(r,'Código')
+    );
+
+  const refeicao =
+    normalizar(nome);
+
+
   /*
-    A refeição está na coluna TIPO.
+    A refeição pode aparecer
+    na coluna Tipo OU na coluna Código.
 
-    Exemplo:
-
-    Tipo = Almoço
-    Código = Checklist
+    Portanto aceitamos os dois.
   */
 
   return (
-    normalizar(
-      val(r,'Tipo')
-    ) ===
-    normalizar(nome)
+    tipo === refeicao ||
+    codigo === refeicao
   );
 
 }
@@ -974,7 +959,7 @@ function add(
 
 
 /* =====================================================
-   AUDITORIA DE REFEIÇÃO
+   AUDITORIA DA REFEIÇÃO
 ===================================================== */
 
 function auditarRefeicao(
@@ -992,15 +977,11 @@ function auditarRefeicao(
 
 
   /*
-    IMPORTANTE:
+    SOMENTE CHECKLIST E EFETIVO
+    representam trabalho.
 
-    Procuramos somente registros
-    que realmente sejam trabalho.
-
-    Checklist ou Efetivo.
-
-    Corretiva, Inativo e Falta de
-    Operador são ignorados.
+    Corretiva, Inativo e
+    Falta de Operador ficam fora.
   */
 
   const trabalho =
@@ -1015,8 +996,8 @@ function auditarRefeicao(
 
 
   /*
-    Se não há trabalho,
-    não há obrigação.
+    Se não trabalhou,
+    não existe obrigação de refeição.
   */
 
   if(
@@ -1029,9 +1010,16 @@ function auditarRefeicao(
 
 
   /*
-    Verifica se o operador
-    realmente estava trabalhando
-    na janela da refeição.
+    Verifica se houve trabalho
+    durante a janela da refeição.
+
+    Exemplo:
+
+    Efetivo 12:00 -> 14:00
+
+    cruza a janela 11:00 -> 13:00.
+
+    Então a refeição é obrigatória.
   */
 
   const trabalhandoNaJanela =
@@ -1046,10 +1034,9 @@ function auditarRefeicao(
 
 
   /*
-    Se ele trabalhou apenas
-    fora da janela:
-
-    NÃO É ERRO.
+    Se o operador trabalhou somente
+    antes/depois da janela,
+    não gera erro.
   */
 
   if(!trabalhandoNaJanela){
@@ -1060,29 +1047,85 @@ function auditarRefeicao(
 
 
   /*
-    Agora procuramos a refeição
-    DO MESMO OPERADOR.
+    ===================================================
+    CORREÇÃO IMPORTANTE
+    ===================================================
 
-    Não basta existir almoço
-    de outra pessoa.
+    Agora procuramos a refeição
+    do MESMO operador.
+
+    E, principalmente:
+
+    a refeição precisa estar
+    dentro da janela correta.
+
+    Exemplo:
+
+    Almoço 11:00
+    Efetivo 12:00
+
+    -> CORRETO.
   */
 
   const refeicao =
-    rows.find(
-      r =>
+    rows.find(r => {
 
-        val(r,'Operador') ===
-        operador &&
+      /*
+        Mesmo operador.
+      */
 
-        ehRefeicao(
+      if(
+        val(r,'Operador') !== operador
+      ){
+
+        return false;
+
+      }
+
+
+      /*
+        É a refeição correta?
+      */
+
+      if(
+        !ehRefeicao(
           r,
           config.nome
         )
-    );
+      ){
+
+        return false;
+
+      }
+
+
+      /*
+        A refeição aconteceu
+        dentro da janela?
+      */
+
+      if(
+        !cruzaJanela(
+          r,
+          config.inicio,
+          config.fim
+        )
+      ){
+
+        return false;
+
+      }
+
+
+      return true;
+
+    });
 
 
   /*
-    Encontrou almoço/janta/lanche.
+    Encontrou a refeição.
+
+    NÃO É ERRO.
   */
 
   if(refeicao){
@@ -1093,9 +1136,10 @@ function auditarRefeicao(
 
 
   /*
-    Não encontrou.
+    Trabalhou na janela
+    e não encontrou refeição.
 
-    Agora sim é erro.
+    AGORA SIM é erro.
   */
 
   add(
@@ -1109,16 +1153,10 @@ function auditarRefeicao(
 
 
 /* =====================================================
-   AUDITORIA DE TODAS AS REFEIÇÕES
+   AUDITORIA DE REFEIÇÕES
 ===================================================== */
 
 function auditRefeicoes(rs){
-
-  /*
-    Agrupamos por:
-
-    Operador + Turno
-  */
 
   const grupos =
     new Map();
@@ -1145,7 +1183,7 @@ function auditRefeicoes(rs){
 
     /*
       Sem turno:
-      não cobrar refeição.
+      não cobrar.
     */
 
     if(!turno)
@@ -1153,11 +1191,8 @@ function auditRefeicoes(rs){
 
 
     /*
-      Corretiva,
-      falta de operador
-      e inativo:
-
-      não entram na cobrança.
+      Situações que não representam
+      trabalho efetivo.
     */
 
     if(
@@ -1195,7 +1230,7 @@ function auditRefeicoes(rs){
 
 
   /*
-    Analisa cada operador.
+    Analisa cada operador/turno.
   */
 
   for(
@@ -1203,11 +1238,14 @@ function auditRefeicoes(rs){
     of grupos
   ){
 
+    const partes =
+      chave.split('|');
+
     const operador =
-      chave.split('|')[0];
+      partes[0];
 
     const turno =
-      chave.split('|')[1];
+      partes[1];
 
 
     auditarRefeicao(
@@ -1229,11 +1267,28 @@ function auditarTroca(rs){
 
   const trocas =
     rs.filter(
-      r =>
-        normalizar(
-          val(r,'Tipo')
-        ) ===
-        'troca de turno'
+      r => {
+
+        const tipo =
+          normalizar(
+            val(r,'Tipo')
+          );
+
+        const codigo =
+          normalizar(
+            val(r,'Código')
+          );
+
+
+        return (
+          tipo ===
+          'troca de turno' ||
+
+          codigo ===
+          'troca de turno'
+        );
+
+      }
     );
 
 
@@ -1251,15 +1306,15 @@ function auditarTroca(rs){
 
     const horarios = [
 
-      420,   // 07:00
-      920,   // 15:20
-      1420   // 23:40
+      420,
+      920,
+      1420
 
     ];
 
 
     /*
-      Horário exatamente correto.
+      Horário correto.
     */
 
     if(
@@ -1272,8 +1327,7 @@ function auditarTroca(rs){
 
 
     /*
-      Descobre o horário oficial
-      mais próximo.
+      Horário oficial mais próximo.
     */
 
     const maisProximo =
@@ -1324,7 +1378,7 @@ function audit(){
 
 
   /*
-    Agrupa por:
+    Agrupamento:
 
     Equipamento + Data
   */
@@ -1369,7 +1423,8 @@ function audit(){
 
 
   /*
-    Executa auditoria.
+    Executa auditoria
+    equipamento por equipamento.
   */
 
   for(
@@ -1738,14 +1793,9 @@ $('file').onchange =
 
 
       /*
-        Linha 1:
-        título
-
-        Linha 2:
-        cabeçalho
-
-        Linha 3 em diante:
-        registros
+        Linha 1 = título
+        Linha 2 = cabeçalho
+        Linha 3 em diante = dados
       */
 
       headers =
@@ -1844,7 +1894,7 @@ $('file').onchange =
 
 
       /*
-        RODA A AUDITORIA
+        Executa auditoria.
       */
 
       audit();
@@ -1897,7 +1947,7 @@ $('file').onchange =
 
 
 /* =====================================================
-   LIMPAR
+   LIMPAR FILTROS
 ===================================================== */
 
 $('clear').onclick =
