@@ -5,46 +5,44 @@
 
 <meta charset="utf-8">
 
-<meta
-  name="viewport"
-  content="width=device-width,initial-scale=1"
->
+<meta name="viewport"
+      content="width=device-width,initial-scale=1">
 
 <title>Controle de Operações — Auditoria</title>
 
 <style>
 
 *{
-  box-sizing:border-box
+  box-sizing:border-box;
 }
 
 body{
   margin:0;
   font-family:Arial,sans-serif;
   background:#f5f7fa;
-  color:#17202a
+  color:#17202a;
 }
 
 header{
   background:#17202a;
   color:#fff;
-  padding:24px 32px
+  padding:24px 32px;
 }
 
 header h1{
   margin:0 0 6px;
-  font-size:24px
+  font-size:24px;
 }
 
 header p{
   margin:0;
-  color:#cbd5e1
+  color:#cbd5e1;
 }
 
 main{
   max-width:1400px;
   margin:24px auto;
-  padding:0 18px
+  padding:0 18px;
 }
 
 .card{
@@ -53,7 +51,7 @@ main{
   border-radius:12px;
   padding:20px;
   margin-bottom:18px;
-  box-shadow:0 2px 8px #0000000b
+  box-shadow:0 2px 8px #0000000b;
 }
 
 .upload{
@@ -61,7 +59,7 @@ main{
   text-align:center;
   padding:32px;
   border-radius:10px;
-  background:#fafbfd
+  background:#fafbfd;
 }
 
 button{
@@ -71,12 +69,12 @@ button{
   cursor:pointer;
   font-weight:600;
   background:#1f6feb;
-  color:white
+  color:white;
 }
 
 button.secondary{
   background:#e9eef5;
-  color:#17202a
+  color:#17202a;
 }
 
 input,
@@ -84,31 +82,31 @@ select{
   padding:9px;
   border:1px solid #ccd5df;
   border-radius:7px;
-  background:white
+  background:white;
 }
 
 .grid{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
-  gap:12px
+  gap:12px;
 }
 
 .metric{
   background:#f7f9fc;
   border-radius:9px;
-  padding:14px
+  padding:14px;
 }
 
 .metric b{
   display:block;
   font-size:24px;
-  margin-top:5px
+  margin-top:5px;
 }
 
 .filters{
   display:flex;
   gap:10px;
-  flex-wrap:wrap
+  flex-wrap:wrap;
 }
 
 .filters label{
@@ -116,20 +114,20 @@ select{
   flex-direction:column;
   gap:5px;
   font-size:12px;
-  font-weight:700
+  font-weight:700;
 }
 
 .table-wrap{
   overflow:auto;
   max-height:600px;
   border:1px solid #e0e6ed;
-  border-radius:8px
+  border-radius:8px;
 }
 
 table{
   border-collapse:collapse;
   width:100%;
-  font-size:13px
+  font-size:13px;
 }
 
 th,
@@ -137,34 +135,48 @@ td{
   border-bottom:1px solid #e6ebf0;
   padding:9px;
   text-align:left;
-  white-space:nowrap
+  white-space:nowrap;
 }
 
 th{
   position:sticky;
   top:0;
   background:#eef2f6;
-  z-index:1
+  z-index:1;
 }
 
 .hidden{
-  display:none
+  display:none;
 }
 
 .muted{
-  color:#64748b
+  color:#64748b;
 }
 
 .status{
   padding:9px 12px;
   border-radius:7px;
   background:#eef6ff;
-  margin-top:12px
+  margin-top:12px;
 }
 
 .error{
   color:#b42318;
-  font-weight:700
+  font-weight:700;
+}
+
+.success{
+  color:#067647;
+  font-weight:700;
+}
+
+.info-box{
+  background:#f8fafc;
+  border:1px solid #e2e8f0;
+  border-radius:8px;
+  padding:12px;
+  margin-top:12px;
+  font-size:13px;
 }
 
 </style>
@@ -219,10 +231,6 @@ O processamento ocorre no navegador, sem IA.
 <section id="dashboard" class="hidden">
 
 
-<!-- ==================================================
-     RESUMO
-================================================== -->
-
 <div class="card">
 
 <h2>
@@ -231,15 +239,57 @@ Resumo da auditoria
 
 <div
   class="grid"
-  id="metrics"
-></div>
+  id="metrics">
+</div>
 
 </div>
 
 
-<!-- ==================================================
-     FILTROS
-================================================== -->
+<div class="card">
+
+<h2>
+Regras utilizadas
+</h2>
+
+<div class="info-box">
+
+<b>07:00 – 15:20:</b>
+Almoço
+
+<br><br>
+
+<b>15:20 – 23:40:</b>
+Janta
+
+<br><br>
+
+<b>23:40 – 07:00:</b>
+Lanche
+
+<br><br>
+
+<b>Checklist:</b>
+operador entrou na máquina
+
+<br>
+
+<b>Efetivo:</b>
+operador trabalhando
+
+<br>
+
+<b>Corretiva:</b>
+equipamento em manutenção — não gera falta
+
+<br>
+
+<b>Falta de Operador:</b>
+não havia operador — não gera falta
+
+</div>
+
+</div>
+
 
 <div class="card">
 
@@ -290,12 +340,16 @@ Tipo de erro
   id="clear"
   class="secondary"
 >
+
 Limpar filtros
+
 </button>
 
 
 <button id="export">
+
 Exportar CSV
+
 </button>
 
 
@@ -303,10 +357,6 @@ Exportar CSV
 
 </div>
 
-
-<!-- ==================================================
-     ERROS
-================================================== -->
 
 <div class="card">
 
@@ -316,8 +366,8 @@ Erros encontrados
 
 <div
   id="count"
-  class="muted"
-></div>
+  class="muted">
+</div>
 
 
 <div class="table-wrap">
@@ -370,10 +420,6 @@ Erros encontrados
 </div>
 
 
-<!-- ==================================================
-     PRÉVIA
-================================================== -->
-
 <div class="card">
 
 <h2>
@@ -393,22 +439,18 @@ Prévia dos dados originais
 
 </section>
 
-
 </main>
 
-
-<!-- ==================================================
-     SHEETJS
-================================================== -->
 
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 
 
 <script>
 
-/* ====================================================
+
+/* =====================================================
    VARIÁVEIS
-==================================================== */
+===================================================== */
 
 let rows = [];
 
@@ -423,15 +465,26 @@ const $ = id =>
   document.getElementById(id);
 
 
-/* ====================================================
+/* =====================================================
    FUNÇÕES BÁSICAS
-==================================================== */
+===================================================== */
 
-function val(r, n){
+function val(r,n){
 
   return r[n] == null
     ? ''
     : String(r[n]).trim();
+
+}
+
+
+function normalize(text){
+
+  return String(text || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .trim()
+    .toLowerCase();
 
 }
 
@@ -444,10 +497,7 @@ function unique(a){
     )
   ].sort(
     (a,b)=>
-      a.localeCompare(
-        b,
-        'pt-BR'
-      )
+      a.localeCompare(b,'pt-BR')
   );
 
 }
@@ -455,20 +505,17 @@ function unique(a){
 
 function esc(x){
 
-  return String(
-    x ?? ''
-  ).replace(
-    /[&<>"']/g,
-    c=>({
-
-      '&':'&amp;',
-      '<':'&lt;',
-      '>':'&gt;',
-      '"':'&quot;',
-      "'":'&#039;'
-
-    }[c])
-  );
+  return String(x ?? '')
+    .replace(
+      /[&<>"']/g,
+      c => ({
+        '&':'&amp;',
+        '<':'&lt;',
+        '>':'&gt;',
+        '"':'&quot;',
+        "'":'&#039;'
+      }[c])
+    );
 
 }
 
@@ -479,114 +526,40 @@ function opts(id,a){
     '<option value="">Todos</option>' +
 
     unique(a)
-      .map(x=>
-        '<option value="' +
-        esc(x) +
-        '">' +
-        esc(x) +
-        '</option>'
+      .map(
+        x =>
+          '<option value="' +
+          esc(x) +
+          '">' +
+          esc(x) +
+          '</option>'
       )
       .join('');
 
 }
 
 
-/* ====================================================
-   NORMALIZA DATA
-==================================================== */
+/* =====================================================
+   DATA E HORA
+===================================================== */
 
-function normalizarData(date){
+function parseDateTime(date,time){
 
-  date =
-    String(
-      date || ''
-    ).trim();
+  date = String(date || '').trim();
 
-
-  if(!date)
-    return '';
-
-
-  /*
-    Data no formato:
-    dd/mm/yyyy
-  */
-
-  if(
-    /^\d{2}\/\d{2}\/\d{4}$/
-      .test(date)
-  ){
-
-    return date;
-
-  }
-
-
-  /*
-    Data no formato:
-    yyyy-mm-dd
-  */
-
-  const iso =
-    date.match(
-      /^(\d{4})-(\d{2})-(\d{2})/
-    );
-
-
-  if(iso){
-
-    return (
-      iso[3] +
-      '/' +
-      iso[2] +
-      '/' +
-      iso[1]
-    );
-
-  }
-
-
-  return date;
-
-}
-
-
-/* ====================================================
-   DATA + HORA
-==================================================== */
-
-function parseDateTime(
-  date,
-  time
-){
-
-  date =
-    String(
-      date || ''
-    ).trim();
-
-
-  time =
-    String(
-      time || '00:00:00'
-    ).trim();
+  time = String(
+    time || '00:00:00'
+  ).trim();
 
 
   if(!date)
     return null;
 
 
-  /*
-    yyyy-mm-dd
-  */
-
-  let m =
-    date.match(
-      /^(\d{4})-(\d{2})-(\d{2})/
-    );
+  const p = date.split('/');
 
 
-  if(m){
+  if(p.length === 3){
 
     const h =
       time
@@ -594,72 +567,17 @@ function parseDateTime(
         .map(Number);
 
 
-    const d =
-      new Date(
-
-        Number(m[1]),
-
-        Number(m[2])-1,
-
-        Number(m[3]),
-
-        h[0] || 0,
-
-        h[1] || 0,
-
-        h[2] || 0
-
-      );
-
-
-    return isNaN(
-      d.getTime()
-    )
-      ? null
-      : d;
-
-  }
-
-
-  /*
-    dd/mm/yyyy
-  */
-
-  m =
-    date.match(
-      /^(\d{2})\/(\d{2})\/(\d{4})/
+    const d = new Date(
+      Number(p[2]),
+      Number(p[1]) - 1,
+      Number(p[0]),
+      h[0] || 0,
+      h[1] || 0,
+      h[2] || 0
     );
 
 
-  if(m){
-
-    const h =
-      time
-        .split(':')
-        .map(Number);
-
-
-    const d =
-      new Date(
-
-        Number(m[3]),
-
-        Number(m[2])-1,
-
-        Number(m[1]),
-
-        h[0] || 0,
-
-        h[1] || 0,
-
-        h[2] || 0
-
-      );
-
-
-    return isNaN(
-      d.getTime()
-    )
+    return isNaN(d.getTime())
       ? null
       : d;
 
@@ -668,78 +586,42 @@ function parseDateTime(
 
   const d =
     new Date(
-      date +
-      ' ' +
-      time
+      date + ' ' + time
     );
 
 
-  return isNaN(
-    d.getTime()
-  )
+  return isNaN(d.getTime())
     ? null
     : d;
 
 }
 
 
-/* ====================================================
-   DATA DE INÍCIO
-==================================================== */
-
 function dateObj(r){
 
   return parseDateTime(
-
-    val(
-      r,
-      'Data Início'
-    ),
-
-    val(
-      r,
-      'Hora Início'
-    )
-
+    val(r,'Data Início'),
+    val(r,'Hora Início')
   );
 
 }
 
-
-/* ====================================================
-   DATA DE FIM
-==================================================== */
 
 function endObj(r){
 
   return parseDateTime(
-
-    val(
-      r,
-      'Data Fim'
-    ),
-
-    val(
-      r,
-      'Hora Fim'
-    )
-
+    val(r,'Data Fim'),
+    val(r,'Hora Fim')
   );
 
 }
 
 
-/* ====================================================
-   DURAÇÃO EM MINUTOS
-==================================================== */
-
 function mins(r){
 
-  const a =
-    dateObj(r);
+  const a = dateObj(r);
 
-  const b =
-    endObj(r);
+  const b = endObj(r);
 
 
   if(!a || !b)
@@ -747,12 +629,8 @@ function mins(r){
 
 
   let result =
-    (b-a)/60000;
+    (b - a) / 60000;
 
-
-  /*
-    Se atravessou meia-noite.
-  */
 
   if(result < 0)
     result += 1440;
@@ -763,85 +641,45 @@ function mins(r){
 }
 
 
-/* ====================================================
-   HORA -> MINUTOS
-==================================================== */
+function hm(r){
 
-function horaMinutos(hora){
-
-  const m =
-    String(
-      hora || ''
-    ).match(
-      /^(\d{1,2}):(\d{2})/
-    );
+  const h =
+    val(r,'Hora Início')
+      .match(/^(\d{1,2}):(\d{2})/);
 
 
-  if(!m)
+  if(!h)
     return null;
 
 
   return (
-    Number(m[1]) * 60 +
-    Number(m[2])
+    Number(h[1]) * 60 +
+    Number(h[2])
   );
 
 }
 
 
-/* ====================================================
-   HORA DE INÍCIO
-==================================================== */
-
-function hm(r){
-
-  return horaMinutos(
-    val(
-      r,
-      'Hora Início'
-    )
-  );
-
-}
-
-
-/* ====================================================
-   HORA DE FIM
-==================================================== */
-
-function hmFim(r){
-
-  return horaMinutos(
-    val(
-      r,
-      'Hora Fim'
-    )
-  );
-
-}
-
-
-/* ====================================================
-   IDENTIFICA TURNO
-==================================================== */
+/* =====================================================
+   IDENTIFICA O TURNO
+===================================================== */
 
 function getTurno(r){
 
   const turno =
-    val(
-      r,
-      'Turno'
+    normalize(
+      val(r,'Turno')
     );
 
 
   /*
-    Turno X:
+    Turno X
     07:00 - 15:20
   */
 
   if(
-    /Turno\s*X/i
-      .test(turno)
+    turno.includes('turno x') ||
+    turno.includes('07:00-15:20')
   ){
 
     return 'X';
@@ -850,13 +688,13 @@ function getTurno(r){
 
 
   /*
-    Turno Y:
+    Turno Y
     15:20 - 23:40
   */
 
   if(
-    /Turno\s*Y/i
-      .test(turno)
+    turno.includes('turno y') ||
+    turno.includes('15:20-23:40')
   ){
 
     return 'Y';
@@ -865,29 +703,13 @@ function getTurno(r){
 
 
   /*
-    A planilha não possui
-    Turno Z.
-
-    O período:
+    Turno Z / noite
     23:40 - 07:00
-
-    aparece como "-".
-
-    Então identificamos
-    pelo horário.
   */
 
-  const h =
-    hm(r);
-
-
-  if(h == null)
-    return '';
-
-
   if(
-    h >= 1420 ||
-    h < 420
+    turno.includes('turno z') ||
+    turno.includes('23:40-07:00')
   ){
 
     return 'Z';
@@ -900,56 +722,22 @@ function getTurno(r){
 }
 
 
-/* ====================================================
-   IDENTIFICA REFEIÇÃO
-==================================================== */
+/* =====================================================
+   REFEIÇÃO ESPERADA PELO TURNO
+===================================================== */
 
-function refeicaoEsperada(r){
+function refeicaoDoTurno(turno){
 
-  const turno =
-    getTurno(r);
-
-
-  /*
-    07:00 - 15:20
-    ALMOÇO
-  */
-
-  if(
-    turno === 'X'
-  ){
-
+  if(turno === 'X')
     return 'Almoço';
 
-  }
 
-
-  /*
-    15:20 - 23:40
-    JANTA
-  */
-
-  if(
-    turno === 'Y'
-  ){
-
+  if(turno === 'Y')
     return 'Janta';
 
-  }
 
-
-  /*
-    23:40 - 07:00
-    LANCHE
-  */
-
-  if(
-    turno === 'Z'
-  ){
-
+  if(turno === 'Z')
     return 'Lanche';
-
-  }
 
 
   return '';
@@ -957,84 +745,143 @@ function refeicaoEsperada(r){
 }
 
 
-/* ====================================================
+/* =====================================================
+   VERIFICA SE O REGISTRO REPRESENTA TRABALHO
+===================================================== */
+
+function registroValidoParaRefeicao(r){
+
+  const codigo =
+    normalize(
+      val(r,'Código')
+    );
+
+
+  /*
+    FALTA DE OPERADOR
+
+    Não gera erro de refeição.
+  */
+
+  if(
+    codigo.includes('falta de operador')
+  ){
+
+    return false;
+
+  }
+
+
+  /*
+    CORRETIVA
+
+    Equipamento está em manutenção.
+    Não gera erro de refeição.
+  */
+
+  if(
+    codigo === 'corretiva' ||
+    codigo.includes('corretiva')
+  ){
+
+    return false;
+
+  }
+
+
+  /*
+    INATIVO
+
+    Não consideramos como operador trabalhando.
+  */
+
+  if(
+    codigo === 'inativo'
+  ){
+
+    return false;
+
+  }
+
+
+  /*
+    CHECKLIST = operador entrou
+    EFETIVO   = operador trabalhando
+
+    Ambos são registros válidos.
+  */
+
+  if(
+    codigo === 'checklist' ||
+    codigo === 'efetivo'
+  ){
+
+    return true;
+
+  }
+
+
+  /*
+    Outros códigos que tenham operador
+    também podem representar operação.
+  */
+
+  const operador =
+    val(r,'Operador');
+
+
+  if(operador)
+    return true;
+
+
+  return false;
+
+}
+
+
+/* =====================================================
    ADICIONA ERRO
-==================================================== */
+===================================================== */
 
 function add(
-
   r,
-
   type,
-
   motivo,
-
   expected='',
-
   diff=''
-
 ){
 
   errors.push({
 
     equip:
-      val(
-        r,
-        'Equipamento'
-      ),
+      val(r,'Equipamento'),
 
     tipoEq:
-      val(
-        r,
-        'Tipo Equipamento'
-      ),
+      val(r,'Tipo Equipamento'),
 
     date:
-      normalizarData(
-        val(
-          r,
-          'Data Início'
-        )
-      ),
+      val(r,'Data Início'),
 
     op:
-      val(
-        r,
-        'Operador'
-      ) ||
+      val(r,'Operador') ||
       'Operador não identificado',
 
     mat:
-      val(
-        r,
-        'Matrícula Operador'
-      ),
+      val(r,'Matrícula Operador'),
 
     turn:
-      val(
-        r,
-        'Turno'
-      ),
+      val(r,'Turno'),
 
     type,
 
     codigo:
-      val(
-        r,
-        'Código'
-      ),
+      val(r,'Código'),
 
     ini:
-      val(
-        r,
-        'Hora Início'
-      ),
+      val(r,'Hora Início'),
 
     fim:
-      val(
-        r,
-        'Hora Fim'
-      ),
+      val(r,'Hora Fim'),
 
     dur:
       mins(r),
@@ -1050,102 +897,58 @@ function add(
 }
 
 
-/* ====================================================
-   VERIFICA SE POSSUI REFEIÇÃO
-==================================================== */
+/* =====================================================
+   IDENTIFICA REFEIÇÃO
+===================================================== */
 
-function possuiRefeicao(
-  rs,
-  refeicao
-){
+function ehRefeicao(r,nome){
 
-  const codigo =
-    refeicao.toLowerCase();
-
-
-  return rs.some(r=>{
-
-    const c =
-      val(
-        r,
-        'Código'
-      ).toLowerCase();
-
-
-    /*
-      Almoço
-    */
-
-    if(
-      c === codigo
-    ){
-
-      return true;
-
-    }
-
-
-    /*
-      Excesso de Almoço
-    */
-
-    if(
-
-      refeicao === 'Almoço' &&
-
-      c ===
-      'excesso de almoço'
-
-    ){
-
-      return true;
-
-    }
-
-
-    /*
-      Excesso de Janta
-    */
-
-    if(
-
-      refeicao === 'Janta' &&
-
-      c ===
-      'excesso de janta'
-
-    ){
-
-      return true;
-
-    }
-
-
-    return false;
-
-  });
+  return (
+    normalize(
+      val(r,'Tipo')
+    ) ===
+    normalize(nome)
+  );
 
 }
 
 
-/* ====================================================
-   AUDITORIA DAS REFEIÇÕES
-==================================================== */
+/* =====================================================
+   IDENTIFICA REGISTRO DE AUSÊNCIA
+===================================================== */
 
-function auditRefeicoes(rs){
+function ehAusenciaOperador(r){
+
+  const codigo =
+    normalize(
+      val(r,'Código')
+    );
+
+
+  return (
+    codigo.includes('falta de operador') ||
+    codigo === 'corretiva' ||
+    codigo.includes('corretiva')
+  );
+
+}
+
+
+/* =====================================================
+   AUDITORIA DE REFEIÇÃO
+===================================================== */
+
+function auditRefeicao(rs){
 
   /*
-    Agora agrupamos por:
+    Aqui analisamos por OPERADOR.
 
-      Operador
-      Matrícula
-      Equipamento
-      Refeição
+    Isso é muito importante.
 
-    Isso evita que um almoço
-    de uma pessoa seja usado
-    para validar outra pessoa.
+    Um equipamento pode passar por vários
+    operadores durante o dia.
   */
+
 
   const grupos =
     new Map();
@@ -1153,28 +956,33 @@ function auditRefeicoes(rs){
 
   rs.forEach(r=>{
 
-    const op =
-      val(
-        r,
-        'Operador'
-      );
+    const operador =
+      val(r,'Operador');
 
 
-    const mat =
-      val(
-        r,
-        'Matrícula Operador'
-      );
+    const turno =
+      getTurno(r);
 
 
     /*
-      Sem operador não conseguimos
-      afirmar falta individual.
+      Sem operador ou sem turno:
+      não conseguimos cobrar refeição.
+    */
+
+    if(!operador || !turno)
+      return;
+
+
+    /*
+      Verifica se esse registro realmente
+      representa operação.
+
+      Falta de operador e corretiva
+      ficam fora.
     */
 
     if(
-      !op &&
-      !mat
+      !registroValidoParaRefeicao(r)
     ){
 
       return;
@@ -1182,12 +990,8 @@ function auditRefeicoes(rs){
     }
 
 
-    const turno =
-      getTurno(r);
-
-
     const refeicao =
-      refeicaoEsperada(r);
+      refeicaoDoTurno(turno);
 
 
     if(!refeicao)
@@ -1195,26 +999,21 @@ function auditRefeicoes(rs){
 
 
     const key =
-
-      op +
+      operador +
       '|' +
-      mat +
-      '|' +
-      val(
-        r,
-        'Equipamento'
-      ) +
-      '|' +
-      refeicao;
+      turno;
 
 
-    if(
-      !grupos.has(key)
-    ){
+    if(!grupos.has(key)){
 
       grupos.set(
         key,
-        []
+        {
+          operador,
+          turno,
+          refeicao,
+          registros:[]
+        }
       );
 
     }
@@ -1222,256 +1021,140 @@ function auditRefeicoes(rs){
 
     grupos
       .get(key)
+      .registros
       .push(r);
 
   });
 
 
   /*
-    Analisa cada operador.
+    Agora analisamos cada operador.
   */
 
-  grupos.forEach(
-    registros=>{
+  for(
+    const grupo of grupos.values()
+  ){
 
-      const refeicao =
-        refeicaoEsperada(
-          registros[0]
-        );
-
-
-      if(!refeicao)
-        return;
-
-
-      /*
-        Encontrou a refeição.
-      */
-
-      if(
-        possuiRefeicao(
-          registros,
-          refeicao
-        )
-      ){
-
-        /*
-          Para almoço e janta
-          verificamos duração.
-
-          Lanche não recebe
-          essa regra.
-        */
-
-        if(
-
-          refeicao ===
-          'Almoço' ||
-
-          refeicao ===
-          'Janta'
-
-        ){
-
-          registros
-            .filter(r=>{
-
-              const c =
-                val(
-                  r,
-                  'Código'
-                ).toLowerCase();
+    const {
+      operador,
+      turno,
+      refeicao,
+      registros
+    } = grupo;
 
 
-              return (
+    /*
+      Verifica se existe apontamento
+      da refeição correta.
 
-                c ===
-                refeicao.toLowerCase()
+      ATENÇÃO:
 
-              );
+      A refeição está na coluna TIPO.
 
-            })
-            .forEach(r=>{
+      Exemplo:
 
-              const d =
-                mins(r);
+      Tipo = Almoço
+      Código = Checklist
 
+      Portanto não devemos procurar
+      "Almoço" na coluna Código.
+    */
 
-              if(
+    const apontamentos =
+      rs.filter(r =>
 
-                d != null &&
+        val(r,'Operador') === operador &&
 
-                d < 60
+        getTurno(r) === turno &&
 
-              ){
-
-                add(
-
-                  r,
-
-                  refeicao,
-
-                  refeicao +
-                  ' menor que 1 hora',
-
-                  '60 minutos',
-
-                  (
-                    d-60
-                  ).toFixed(2)
-
-                );
-
-              }
-
-            });
-
-        }
-
-
-        return;
-
-      }
-
-
-      /*
-        Não encontrou a refeição.
-      */
-
-      const base =
-        registros[0];
-
-
-      add(
-
-        base,
-
-        refeicao,
-
-        refeicao +
-        ' não apontado'
+        ehRefeicao(r,refeicao)
 
       );
 
+
+    /*
+      Se encontrou a refeição,
+      não existe falta.
+    */
+
+    if(apontamentos.length > 0){
+
+      continue;
+
     }
 
-  );
+
+    /*
+      Usa o primeiro registro válido
+      do operador como referência
+      para mostrar o erro.
+    */
+
+    const base =
+      registros[0];
+
+
+    add(
+      base,
+      refeicao,
+      refeicao +
+      ' não apontado'
+    );
+
+  }
 
 }
 
 
-/* ====================================================
-   AUDITORIA TROCA DE TURNO
-==================================================== */
+/* =====================================================
+   AUDITORIA DE TROCA DE TURNO
+===================================================== */
 
 function auditTroca(rs){
 
   const trocas =
-    rs.filter(r=>
+    rs.filter(r =>
 
-      val(
-        r,
-        'Código'
-      ).toLowerCase() ===
+      normalize(
+        val(r,'Tipo')
+      ) ===
       'troca de turno'
 
     );
 
 
-  /*
-    Horários oficiais:
-
-    07:00 = 420
-    15:20 = 920
-    23:40 = 1420
-  */
-
-  const oficiais = [
-
-    420,
-
-    920,
-
-    1420
-
-  ];
-
-
   trocas.forEach(r=>{
 
-    const inicio =
+    const m =
       hm(r);
 
 
-    const fim =
-      hmFim(r);
-
-
-    if(
-
-      inicio == null &&
-
-      fim == null
-
-    ){
-
+    if(m == null)
       return;
 
-    }
-
 
     /*
-      IMPORTANTE:
+      Horários oficiais:
 
-      A troca pode representar
-      o intervalo entre dois
-      apontamentos.
-
-      Portanto verificamos
-      INÍCIO e FIM.
-
-      Exemplos corretos:
-
-      14:51:49 -> 15:20:00
-      FIM = 15:20
-
-      15:20:00 -> 15:51:49
-      INÍCIO = 15:20
-
-      23:12:59 -> 23:40:00
-      FIM = 23:40
+      07:00
+      15:20
+      23:40
     */
 
-    const inicioOficial =
-
-      inicio != null &&
-
-      oficiais.includes(
-        inicio
-      );
-
-
-    const fimOficial =
-
-      fim != null &&
-
-      oficiais.includes(
-        fim
-      );
+    const expected = [
+      420,
+      920,
+      1420
+    ];
 
 
     /*
-      Se qualquer lado bater
-      exatamente com horário oficial,
+      Se estiver exatamente no horário,
       está correto.
     */
 
     if(
-
-      inicioOficial ||
-
-      fimOficial
-
+      expected.includes(m)
     ){
 
       return;
@@ -1480,110 +1163,42 @@ function auditTroca(rs){
 
 
     /*
-      Nenhum lado bateu.
-
-      Procuramos o horário oficial
+      Descobre o horário oficial
       mais próximo.
     */
 
-    const candidatos = [];
+    const maisProximo =
+      expected.reduce(
+        (x,y) =>
 
+          Math.abs(y-m) <
+          Math.abs(x-m)
 
-    if(
-      inicio != null
-    ){
-
-      oficiais.forEach(o=>{
-
-        candidatos.push({
-
-          ponto:
-            inicio,
-
-          esperado:
-            o,
-
-          distancia:
-            Math.abs(
-              inicio-o
-            )
-
-        });
-
-      });
-
-    }
-
-
-    if(
-      fim != null
-    ){
-
-      oficiais.forEach(o=>{
-
-        candidatos.push({
-
-          ponto:
-            fim,
-
-          esperado:
-            o,
-
-          distancia:
-            Math.abs(
-              fim-o
-            )
-
-        });
-
-      });
-
-    }
-
-
-    if(
-      !candidatos.length
-    ){
-
-      return;
-
-    }
-
-
-    candidatos.sort(
-      (a,b)=>
-        a.distancia -
-        b.distancia
-    );
-
-
-    const melhor =
-      candidatos[0];
-
-
-    const esperado =
-      formatMinutos(
-        melhor.esperado
+            ? y
+            : x
       );
 
 
-    const diferenca =
-      melhor.ponto -
-      melhor.esperado;
+    const horarioEsperado =
+      String(
+        Math.floor(
+          maisProximo / 60
+        )
+      ).padStart(2,'0') +
+
+      ':' +
+
+      String(
+        maisProximo % 60
+      ).padStart(2,'0');
 
 
     add(
-
       r,
-
       'Troca de turno',
-
       'Troca de turno fora do horário',
-
-      esperado,
-
-      diferenca
-
+      horarioEsperado,
+      (m - maisProximo)
     );
 
   });
@@ -1591,44 +1206,9 @@ function auditTroca(rs){
 }
 
 
-/* ====================================================
-   FORMATA MINUTOS
-==================================================== */
-
-function formatMinutos(m){
-
-  return (
-
-    String(
-      Math.floor(
-        m / 60
-      )
-    ).padStart(
-      2,
-      '0'
-    )
-
-    +
-
-    ':'
-
-    +
-
-    String(
-      m % 60
-    ).padStart(
-      2,
-      '0'
-    )
-
-  );
-
-}
-
-
-/* ====================================================
+/* =====================================================
    AUDITORIA PRINCIPAL
-==================================================== */
+===================================================== */
 
 function audit(){
 
@@ -1636,10 +1216,10 @@ function audit(){
 
 
   /*
-    Agrupamos por:
+    Agrupamento:
 
-      Equipamento
-      Data
+    Equipamento + Data
+
   */
 
   const groups =
@@ -1649,17 +1229,11 @@ function audit(){
   rows.forEach(r=>{
 
     const equipamento =
-      val(
-        r,
-        'Equipamento'
-      );
+      val(r,'Equipamento');
 
 
     const data =
-      val(
-        r,
-        'Data Início'
-      );
+      val(r,'Data Início');
 
 
     const key =
@@ -1668,9 +1242,7 @@ function audit(){
       data;
 
 
-    if(
-      !groups.has(key)
-    ){
+    if(!groups.has(key)){
 
       groups.set(
         key,
@@ -1688,33 +1260,22 @@ function audit(){
 
 
   /*
-    Executa auditoria.
+    Audita cada equipamento/dia.
   */
 
   for(
-    const rs
-    of groups.values()
+    const rs of groups.values()
   ){
 
-    /*
-      Ordena por horário.
-    */
-
     rs.sort(
-      (a,b)=>
+      (a,b) =>
+        (
+          dateObj(a)?.getTime() || 0
+        ) -
 
         (
-          dateObj(a)?.getTime() ||
-          0
+          dateObj(b)?.getTime() || 0
         )
-
-        -
-
-        (
-          dateObj(b)?.getTime() ||
-          0
-        )
-
     );
 
 
@@ -1722,18 +1283,14 @@ function audit(){
       REFEIÇÕES
     */
 
-    auditRefeicoes(
-      rs
-    );
+    auditRefeicao(rs);
 
 
     /*
       TROCA DE TURNO
     */
 
-    auditTroca(
-      rs
-    );
+    auditTroca(rs);
 
   }
 
@@ -1743,72 +1300,49 @@ function audit(){
 }
 
 
-/* ====================================================
+/* =====================================================
    RENDERIZAÇÃO
-==================================================== */
+===================================================== */
 
 function render(){
 
   const a =
     $('fEquip').value;
 
-
   const b =
     $('fOp').value;
 
-
   const c =
     $('fDate').value;
-
 
   const d =
     $('fType').value;
 
 
   filtered =
+    errors.filter(e =>
 
-    errors.filter(e=>
+      (!a || e.equip === a) &&
 
-      (!a ||
-        e.equip === a
-      )
+      (!b || e.op === b) &&
 
-      &&
+      (!c || e.date === c) &&
 
-      (!b ||
-        e.op === b
-      )
-
-      &&
-
-      (!c ||
-        e.date === c
-      )
-
-      &&
-
-      (!d ||
-        e.type === d
-      )
+      (!d || e.type === d)
 
     );
 
 
   $('count').textContent =
-
     filtered.length +
-
     ' erro(s) exibido(s) de ' +
-
     errors.length +
-
     ' encontrado(s).';
 
 
   $('errors').innerHTML =
 
-    filtered
-      .map(e=>`
+    filtered.map(e => `
 
 <tr>
 
@@ -1874,8 +1408,7 @@ ${esc(e.diff)}
 
 </tr>
 
-`)
-.join('');
+`).join('');
 
 
   /*
@@ -1883,9 +1416,7 @@ ${esc(e.diff)}
   */
 
   const equipamentos =
-
     unique(
-
       rows.map(
         r =>
           val(
@@ -1893,14 +1424,11 @@ ${esc(e.diff)}
             'Equipamento'
           )
       )
-
     ).length;
 
 
   const operadores =
-
     unique(
-
       rows.map(
         r =>
           val(
@@ -1908,24 +1436,18 @@ ${esc(e.diff)}
             'Operador'
           )
       )
-
     ).length;
 
 
   const datas =
-
     unique(
-
       rows.map(
         r =>
-          normalizarData(
-            val(
-              r,
-              'Data Início'
-            )
+          val(
+            r,
+            'Data Início'
           )
       )
-
     ).length;
 
 
@@ -1960,8 +1482,7 @@ ${esc(e.diff)}
       'Almoço',
       errors.filter(
         e =>
-          e.type ===
-          'Almoço'
+          e.type === 'Almoço'
       ).length
     ],
 
@@ -1969,8 +1490,7 @@ ${esc(e.diff)}
       'Janta',
       errors.filter(
         e =>
-          e.type ===
-          'Janta'
+          e.type === 'Janta'
       ).length
     ],
 
@@ -1978,8 +1498,7 @@ ${esc(e.diff)}
       'Lanche',
       errors.filter(
         e =>
-          e.type ===
-          'Lanche'
+          e.type === 'Lanche'
       ).length
     ],
 
@@ -1987,14 +1506,13 @@ ${esc(e.diff)}
       'Troca de turno',
       errors.filter(
         e =>
-          e.type ===
-          'Troca de turno'
+          e.type === 'Troca de turno'
       ).length
     ]
 
   ]
 
-  .map(x=>`
+  .map(x => `
 
 <div class="metric">
 
@@ -2013,86 +1531,60 @@ ${x[1]}
 }
 
 
-/* ====================================================
-   PRÉVIA DA PLANILHA
-==================================================== */
+/* =====================================================
+   PRÉVIA
+===================================================== */
 
 function preview(){
 
   $('info').textContent =
-
     rows.length +
-
     ' registros; ' +
-
     headers.length +
-
     ' colunas.';
 
 
   const h =
 
-    '<thead>' +
-
-    '<tr>' +
+    '<thead><tr>' +
 
     headers
-
       .map(
         x =>
-
           '<th>' +
-
           esc(
             x ||
             '(coluna sem nome)'
           ) +
-
           '</th>'
-
       )
-
       .join('') +
 
-    '</tr>' +
-
-    '</thead>';
+    '</tr></thead>';
 
 
   const b =
 
     rows
-
-      .slice(
-        0,
-        10
-      )
-
-      .map(r=>
+      .slice(0,10)
+      .map(r =>
 
         '<tr>' +
 
         headers
-
           .map(
             x =>
-
               '<td>' +
-
               esc(
                 val(r,x)
               ) +
-
               '</td>'
-
           )
-
           .join('') +
 
         '</tr>'
 
       )
-
       .join('');
 
 
@@ -2109,311 +1601,213 @@ function preview(){
 }
 
 
-/* ====================================================
+/* =====================================================
    LEITURA DO EXCEL
-==================================================== */
+===================================================== */
 
-$('file').onchange =
-  async e => {
+$('file').onchange = async e => {
 
-    const f =
-      e.target.files[0];
-
-
-    if(!f)
-      return;
+  const f =
+    e.target.files[0];
 
 
-    try{
+  if(!f)
+    return;
 
 
-      /*
-        Lê o Excel.
-      */
+  try{
 
-      const wb =
+    const wb =
+      XLSX.read(
+        await f.arrayBuffer(),
+        {
+          cellDates:false,
+          raw:false
+        }
+      );
 
-        XLSX.read(
 
-          await f.arrayBuffer(),
+    const ws =
+      wb.Sheets[
+        wb.SheetNames[0]
+      ];
 
-          {
-            cellDates:false
-          }
 
+    const a =
+      XLSX.utils.sheet_to_json(
+        ws,
+        {
+          header:1,
+          defval:'',
+          raw:false
+        }
+      );
+
+
+    /*
+      Estrutura esperada:
+
+      linha 1 = título
+
+      linha 2 = cabeçalho
+
+      linha 3 em diante = dados
+    */
+
+    headers =
+      (a[1] || [])
+        .map(
+          x =>
+            String(x).trim()
         );
 
 
-      /*
-        Primeira aba.
-      */
+    rows =
+      a
+        .slice(2)
 
-      const ws =
+        .filter(
+          r =>
+            r.some(
+              x =>
+                String(x).trim() !== ''
+            )
+        )
 
-        wb.Sheets[
-          wb.SheetNames[0]
-        ];
+        .map(r => {
+
+          const o = {};
 
 
-      /*
-        Converte para matriz.
-      */
+          headers.forEach(
+            (h,i) => {
 
-      const a =
+              o[h] =
+                r[i] ?? '';
 
-        XLSX.utils
-          .sheet_to_json(
-
-            ws,
-
-            {
-              header:1,
-              defval:'',
-              raw:false
             }
-
           );
 
 
-      /*
-        Sua planilha:
+          return o;
 
-        Linha 1 = título
-
-        Linha 2 = cabeçalho
-
-        Linha 3 em diante =
-        dados
-      */
-
-      headers =
-
-        (a[1] || [])
-
-          .map(
-            x =>
-              String(x).trim()
-          );
+        });
 
 
-      rows =
+    $('status').className =
+      'status success';
 
-        a
 
-          .slice(2)
+    $('status').textContent =
+      'Planilha carregada com sucesso: ' +
+      f.name;
 
-          .filter(
-            r =>
 
-              r.some(
-                x =>
-                  String(
-                    x
-                  ).trim() !== ''
-              )
+    $('dashboard')
+      .classList
+      .remove('hidden');
 
+
+    preview();
+
+
+    opts(
+      'fEquip',
+      rows.map(
+        r =>
+          val(
+            r,
+            'Equipamento'
           )
-
-          .map(r=>{
-
-            const o = {};
+      )
+    );
 
 
-            headers.forEach(
-              (h,i)=>{
-
-                o[h] =
-                  r[i] ?? '';
-
-              }
-            );
-
-
-            return o;
-
-          });
+    opts(
+      'fOp',
+      rows.map(
+        r =>
+          val(
+            r,
+            'Operador'
+          )
+      )
+    );
 
 
-      /*
-        Status.
-      */
-
-      $('status')
-        .className =
-        'status';
-
-
-      $('status')
-        .textContent =
-
-        'Planilha carregada com sucesso: ' +
-
-        f.name;
+    opts(
+      'fDate',
+      rows.map(
+        r =>
+          val(
+            r,
+            'Data Início'
+          )
+      )
+    );
 
 
-      /*
-        Mostra dashboard.
-      */
-
-      $('dashboard')
-        .classList
-        .remove(
-          'hidden'
-        );
+    audit();
 
 
-      /*
-        Prévia.
-      */
-
-      preview();
-
-
-      /*
-        Filtro equipamento.
-      */
-
-      opts(
-
-        'fEquip',
-
-        rows.map(
-          r =>
-            val(
-              r,
-              'Equipamento'
-            )
-        )
-
-      );
+    opts(
+      'fType',
+      errors.map(
+        e =>
+          e.type
+      )
+    );
 
 
-      /*
-        Filtro operador.
-      */
+  }
 
-      opts(
+  catch(err){
 
-        'fOp',
-
-        rows.map(
-          r =>
-            val(
-              r,
-              'Operador'
-            )
-        )
-
-      );
+    $('status').className =
+      'status error';
 
 
-      /*
-        Filtro data.
-      */
+    $('status').textContent =
+      'Erro ao ler a planilha: ' +
+      err.message;
 
-      opts(
+  }
 
-        'fDate',
-
-        rows.map(
-          r =>
-            normalizarData(
-              val(
-                r,
-                'Data Início'
-              )
-            )
-        )
-
-      );
+};
 
 
-      /*
-        Executa auditoria.
-      */
-
-      audit();
-
-
-      /*
-        Filtro tipo.
-      */
-
-      opts(
-
-        'fType',
-
-        errors.map(
-          e =>
-            e.type
-        )
-
-      );
-
-
-    }
-
-    catch(err){
-
-      $('status')
-        .className =
-        'status error';
-
-
-      $('status')
-        .textContent =
-
-        'Erro ao ler a planilha: ' +
-
-        err.message;
-
-    }
-
-  };
-
-
-/* ====================================================
+/* =====================================================
    FILTROS
-==================================================== */
+===================================================== */
 
 [
-
   'fEquip',
-
   'fOp',
-
   'fDate',
-
   'fType'
-
 ]
 
 .forEach(
-
-  id =>
+  id => {
 
     $(id).onchange =
-      render
+      render;
 
+  }
 );
 
 
-/* ====================================================
+/* =====================================================
    LIMPAR FILTROS
-==================================================== */
+===================================================== */
 
 $('clear').onclick = () => {
 
   [
-
     'fEquip',
-
     'fOp',
-
     'fDate',
-
     'fType'
-
   ]
 
   .forEach(
@@ -2427,12 +1821,11 @@ $('clear').onclick = () => {
 };
 
 
-/* ====================================================
+/* =====================================================
    EXPORTAÇÃO CSV
-==================================================== */
+===================================================== */
 
 $('export').onclick = () => {
-
 
   const c = [
 
@@ -2513,62 +1906,39 @@ $('export').onclick = () => {
     '\ufeff' +
 
     l
-
       .map(
-
         r =>
-
           r
-
             .map(
-
               x =>
-
                 '"' +
-
                 String(
                   x ?? ''
                 )
-
                 .replaceAll(
                   '"',
                   '""'
-                )
-
-                +
-
+                ) +
                 '"'
-
             )
-
             .join(';')
-
       )
-
       .join('\n');
 
 
   const a =
-    document.createElement(
-      'a'
-    );
+    document.createElement('a');
 
 
   a.href =
-
     URL.createObjectURL(
-
       new Blob(
-
         [csv],
-
         {
           type:
-            'text/csv'
+            'text/csv;charset=utf-8;'
         }
-
       )
-
     );
 
 
@@ -2580,8 +1950,8 @@ $('export').onclick = () => {
 
 };
 
-</script>
 
+</script>
 
 </body>
 
