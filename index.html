@@ -2,7 +2,6 @@
 <html lang="pt-BR">
 
 <head>
-
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 
@@ -38,7 +37,7 @@ header p{
 }
 
 main{
-  max-width:1400px;
+  max-width:1500px;
   margin:24px auto;
   padding:0 18px;
 }
@@ -117,7 +116,7 @@ select{
 
 .table-wrap{
   overflow:auto;
-  max-height:600px;
+  max-height:650px;
   border:1px solid #e0e6ed;
   border-radius:8px;
 }
@@ -172,9 +171,8 @@ th{
   background:#f8fafc;
   border:1px solid #e2e8f0;
   border-radius:8px;
-  padding:12px;
-  margin-top:12px;
-  line-height:1.6;
+  padding:14px;
+  line-height:1.7;
   font-size:13px;
 }
 
@@ -195,6 +193,7 @@ Leitura e auditoria local de planilhas Excel
 </p>
 
 </header>
+
 
 <main>
 
@@ -246,43 +245,50 @@ Resumo da auditoria
 <div class="card">
 
 <h2>
-Regras utilizadas
+Regras da auditoria
 </h2>
 
 <div class="info-box">
 
-<b>Turno X — 07:00 às 15:20</b><br>
-Almoço: <b>11:00 às 13:00</b>
+<b>REFEIÇÕES</b><br>
+
+Almoço:
+<b>11:00 às 13:00</b><br>
+
+Janta:
+<b>19:00 às 21:00</b><br>
+
+Lanche:
+<b>01:00 às 03:00</b>
 
 <br><br>
 
-<b>Turno Y — 15:20 às 23:40</b><br>
-Janta: <b>19:00 às 21:00</b>
+<b>TRABALHO</b><br>
+
+Checklist = trabalho<br>
+Efetivo = trabalho
 
 <br><br>
 
-<b>Turno Z — 23:40 às 07:00</b><br>
-Lanche: <b>01:00 às 03:00</b>
+<b>NÃO COBRAR REFEIÇÃO</b><br>
+
+Corretiva = equipamento em manutenção<br>
+Falta de Operador = não houve operador<br>
+Inativo = não está trabalhando
 
 <br><br>
 
-<b>Checklist:</b> operador acabou de entrar na máquina.
+<b>TROCA DE TURNO</b><br>
 
-<br>
+TRADIMAQ = tolerância de 30 minutos<br>
+MINERAL = tolerância de 10 minutos
 
-<b>Efetivo:</b> operador está trabalhando.
+<br><br>
 
-<br>
+<b>IGNORADOS COMPLETAMENTE</b><br>
 
-<b>Corretiva:</b> equipamento está em manutenção — não cobra refeição.
-
-<br>
-
-<b>Falta de Operador:</b> não cobra refeição.
-
-<br>
-
-<b>Inativo:</b> não cobra refeição.
+TRATOR, POSTO COMBUSTÍVEL,
+CAMINHÃO PIPA e RE
 
 </div>
 
@@ -296,6 +302,11 @@ Filtros
 </h2>
 
 <div class="filters">
+
+<label>
+Grupo
+<select id="fGrupo"></select>
+</label>
 
 <label>
 Equipamento
@@ -352,6 +363,7 @@ Erros encontrados
 
 <tr>
 
+<th>Grupo</th>
 <th>Equipamento</th>
 <th>Tipo Equipamento</th>
 <th>Data</th>
@@ -395,6 +407,7 @@ Prévia dos dados originais
 </div>
 
 </div>
+
 
 </section>
 
@@ -494,7 +507,86 @@ function opts(id,lista){
 
 
 /* =====================================================
-   DATA / HORA
+   GRUPO
+===================================================== */
+
+function getGrupo(r){
+
+  /*
+    A planilha já possui a coluna Grupo.
+
+    Aceitamos:
+    Grupo
+    grupo
+    GRUPO
+  */
+
+  let grupo =
+    val(r,'Grupo');
+
+  if(!grupo)
+    grupo = val(r,'GRUPO');
+
+  if(!grupo)
+    grupo = val(r,'grupo');
+
+  return grupo;
+
+}
+
+
+/* =====================================================
+   EQUIPAMENTOS IGNORADOS
+===================================================== */
+
+function equipamentoIgnorado(r){
+
+  const equipamento =
+    normalizar(
+      val(r,'Equipamento')
+    );
+
+  const tipoEquipamento =
+    normalizar(
+      val(r,'Tipo Equipamento')
+    );
+
+
+  const texto =
+    equipamento +
+    ' ' +
+    tipoEquipamento;
+
+
+  /*
+    Estes equipamentos não entram
+    em NENHUMA auditoria.
+  */
+
+  const ignorados = [
+
+    'trator',
+    'posto combustivel',
+    'posto combustível',
+    'caminhao pipa',
+    'caminhão pipa',
+    're'
+
+  ];
+
+
+  return ignorados.some(
+    item =>
+      texto.includes(
+        normalizar(item)
+      )
+  );
+
+}
+
+
+/* =====================================================
+   DATA E HORA
 ===================================================== */
 
 function parseDateTime(data,hora){
@@ -516,7 +608,7 @@ function parseDateTime(data,hora){
 
   if(p.length === 3){
 
-    const partesHora =
+    const h =
       hora
         .split(':')
         .map(Number);
@@ -527,9 +619,9 @@ function parseDateTime(data,hora){
         Number(p[2]),
         Number(p[1]) - 1,
         Number(p[0]),
-        partesHora[0] || 0,
-        partesHora[1] || 0,
-        partesHora[2] || 0
+        h[0] || 0,
+        h[1] || 0,
+        h[2] || 0
       );
 
 
@@ -598,10 +690,6 @@ function mins(r){
 
 }
 
-
-/* =====================================================
-   HORA EM MINUTOS
-===================================================== */
 
 function horaMinutos(hora){
 
@@ -673,7 +761,7 @@ function getTurno(r){
 
 
 /* =====================================================
-   REGRAS DAS REFEIÇÕES
+   REFEIÇÕES
 ===================================================== */
 
 const REFEICOES = {
@@ -700,7 +788,7 @@ const REFEICOES = {
 
 
 /* =====================================================
-   SITUAÇÕES QUE NÃO GERAM COBRANÇA
+   SITUAÇÕES QUE NÃO COBRAM REFEIÇÃO
 ===================================================== */
 
 function naoCobraRefeicao(r){
@@ -712,7 +800,9 @@ function naoCobraRefeicao(r){
 
 
   if(
-    codigo.includes('falta de operador')
+    codigo.includes(
+      'falta de operador'
+    )
   ){
 
     return true;
@@ -745,7 +835,7 @@ function naoCobraRefeicao(r){
 
 
 /* =====================================================
-   REGISTRO DE TRABALHO
+   TRABALHO
 ===================================================== */
 
 function ehTrabalho(r){
@@ -756,6 +846,10 @@ function ehTrabalho(r){
     );
 
 
+  /*
+    Checklist e Efetivo são trabalho.
+  */
+
   return (
     codigo === 'checklist' ||
     codigo === 'efetivo'
@@ -765,7 +859,7 @@ function ehTrabalho(r){
 
 
 /* =====================================================
-   INTERVALO DO REGISTRO
+   INTERVALO
 ===================================================== */
 
 function intervaloRegistro(r){
@@ -792,6 +886,10 @@ function intervaloRegistro(r){
   }
 
 
+  /*
+    Registro que atravessa meia-noite.
+  */
+
   if(fim < inicio){
 
     fim += 1440;
@@ -808,7 +906,7 @@ function intervaloRegistro(r){
 
 
 /* =====================================================
-   VERIFICA SE O REGISTRO CRUZA UMA JANELA
+   VERIFICA SE CRUZA JANELA
 ===================================================== */
 
 function cruzaJanela(
@@ -825,19 +923,12 @@ function cruzaJanela(
     return false;
 
 
-  let inicio =
+  const inicio =
     intervalo.inicio;
 
-  let fim =
+  const fim =
     intervalo.fim;
 
-
-  /*
-    Para registros da madrugada,
-    como 23:40 -> 02:00,
-    precisamos testar também
-    a janela no dia seguinte.
-  */
 
   const janelas = [
 
@@ -856,17 +947,15 @@ function cruzaJanela(
 
   return janelas.some(
     ([ji,jf]) =>
-
       inicio < jf &&
       fim > ji
-
   );
 
 }
 
 
 /* =====================================================
-   IDENTIFICA ALMOÇO/JANTA/LANCHE
+   IDENTIFICA REFEIÇÃO
 ===================================================== */
 
 function ehRefeicao(r,nome){
@@ -884,13 +973,6 @@ function ehRefeicao(r,nome){
   const refeicao =
     normalizar(nome);
 
-
-  /*
-    A refeição pode aparecer
-    na coluna Tipo OU na coluna Código.
-
-    Portanto aceitamos os dois.
-  */
 
   return (
     tipo === refeicao ||
@@ -913,6 +995,9 @@ function add(
 ){
 
   errors.push({
+
+    grupo:
+      getGrupo(r),
 
     equip:
       val(r,'Equipamento'),
@@ -959,7 +1044,7 @@ function add(
 
 
 /* =====================================================
-   AUDITORIA DA REFEIÇÃO
+   AUDITORIA DE REFEIÇÃO
 ===================================================== */
 
 function auditarRefeicao(
@@ -977,8 +1062,10 @@ function auditarRefeicao(
 
 
   /*
-    SOMENTE CHECKLIST E EFETIVO
-    representam trabalho.
+    SOMENTE TRABALHO REAL:
+
+    Checklist
+    Efetivo
 
     Corretiva, Inativo e
     Falta de Operador ficam fora.
@@ -987,18 +1074,10 @@ function auditarRefeicao(
   const trabalho =
     registros.filter(
       r =>
-
         ehTrabalho(r) &&
-
         !naoCobraRefeicao(r)
-
     );
 
-
-  /*
-    Se não trabalhou,
-    não existe obrigação de refeição.
-  */
 
   if(
     trabalho.length === 0
@@ -1010,16 +1089,8 @@ function auditarRefeicao(
 
 
   /*
-    Verifica se houve trabalho
+    Precisa existir trabalho
     durante a janela da refeição.
-
-    Exemplo:
-
-    Efetivo 12:00 -> 14:00
-
-    cruza a janela 11:00 -> 13:00.
-
-    Então a refeição é obrigatória.
   */
 
   const trabalhandoNaJanela =
@@ -1033,12 +1104,6 @@ function auditarRefeicao(
     );
 
 
-  /*
-    Se o operador trabalhou somente
-    antes/depois da janela,
-    não gera erro.
-  */
-
   if(!trabalhandoNaJanela){
 
     return;
@@ -1047,32 +1112,32 @@ function auditarRefeicao(
 
 
   /*
-    ===================================================
-    CORREÇÃO IMPORTANTE
-    ===================================================
-
-    Agora procuramos a refeição
-    do MESMO operador.
-
-    E, principalmente:
-
-    a refeição precisa estar
-    dentro da janela correta.
-
-    Exemplo:
-
-    Almoço 11:00
-    Efetivo 12:00
-
-    -> CORRETO.
+    Procura a refeição do MESMO
+    operador dentro da janela correta.
   */
 
   const refeicao =
     rows.find(r => {
 
-      /*
-        Mesmo operador.
-      */
+      if(
+        val(r,'Equipamento') !==
+        val(trabalhandoNaJanela,'Equipamento')
+      ){
+
+        return false;
+
+      }
+
+
+      if(
+        val(r,'Data Início') !==
+        val(trabalhandoNaJanela,'Data Início')
+      ){
+
+        return false;
+
+      }
+
 
       if(
         val(r,'Operador') !== operador
@@ -1082,10 +1147,6 @@ function auditarRefeicao(
 
       }
 
-
-      /*
-        É a refeição correta?
-      */
 
       if(
         !ehRefeicao(
@@ -1098,11 +1159,6 @@ function auditarRefeicao(
 
       }
 
-
-      /*
-        A refeição aconteceu
-        dentro da janela?
-      */
 
       if(
         !cruzaJanela(
@@ -1123,9 +1179,8 @@ function auditarRefeicao(
 
 
   /*
-    Encontrou a refeição.
-
-    NÃO É ERRO.
+    Encontrou refeição:
+    tudo certo.
   */
 
   if(refeicao){
@@ -1136,10 +1191,8 @@ function auditarRefeicao(
 
 
   /*
-    Trabalhou na janela
-    e não encontrou refeição.
-
-    AGORA SIM é erro.
+    Trabalhou na janela,
+    mas não houve refeição.
   */
 
   add(
@@ -1153,7 +1206,7 @@ function auditarRefeicao(
 
 
 /* =====================================================
-   AUDITORIA DE REFEIÇÕES
+   AUDITORIA DE TODAS AS REFEIÇÕES
 ===================================================== */
 
 function auditRefeicoes(rs){
@@ -1164,36 +1217,32 @@ function auditRefeicoes(rs){
 
   rs.forEach(r=>{
 
+    /*
+      Ignora equipamentos proibidos.
+    */
+
+    if(
+      equipamentoIgnorado(r)
+    ){
+
+      return;
+
+    }
+
+
     const operador =
       val(r,'Operador');
-
 
     const turno =
       getTurno(r);
 
 
-    /*
-      Sem operador:
-      não cobrar.
-    */
-
     if(!operador)
       return;
-
-
-    /*
-      Sem turno:
-      não cobrar.
-    */
 
     if(!turno)
       return;
 
-
-    /*
-      Situações que não representam
-      trabalho efetivo.
-    */
 
     if(
       naoCobraRefeicao(r)
@@ -1229,10 +1278,6 @@ function auditRefeicoes(rs){
   });
 
 
-  /*
-    Analisa cada operador/turno.
-  */
-
   for(
     const [chave,registros]
     of grupos
@@ -1260,39 +1305,133 @@ function auditRefeicoes(rs){
 
 
 /* =====================================================
+   TOLERÂNCIA DA TROCA DE TURNO
+===================================================== */
+
+function toleranciaTroca(r){
+
+  const grupo =
+    normalizar(
+      getGrupo(r)
+    );
+
+
+  /*
+    TRADIMAQ = 30 minutos
+    MINERAL = 10 minutos
+  */
+
+  if(
+    grupo.includes('tradimaq')
+  ){
+
+    return 30;
+
+  }
+
+
+  if(
+    grupo.includes('mineral')
+  ){
+
+    return 10;
+
+  }
+
+
+  /*
+    Se o grupo não for reconhecido,
+    não assume tolerância.
+  */
+
+  return 0;
+
+}
+
+
+/* =====================================================
+   HORÁRIO OFICIAL DA TROCA
+===================================================== */
+
+function horarioOficialPorTurno(r){
+
+  const turno =
+    getTurno(r);
+
+
+  /*
+    Se a troca está no início
+    do Turno X:
+    07:00
+
+    Turno Y:
+    15:20
+
+    Turno Z:
+    23:40
+  */
+
+  if(turno === 'X')
+    return 420;
+
+  if(turno === 'Y')
+    return 920;
+
+  if(turno === 'Z')
+    return 1420;
+
+
+  /*
+    Caso não tenha turno,
+    tenta usar o horário mais próximo.
+  */
+
+  return null;
+
+}
+
+
+/* =====================================================
    TROCA DE TURNO
 ===================================================== */
 
 function auditarTroca(rs){
 
-  const trocas =
-    rs.filter(
-      r => {
+  rs.forEach(r=>{
 
-        const tipo =
-          normalizar(
-            val(r,'Tipo')
-          );
+    /*
+      Ignorar equipamentos definidos.
+    */
 
-        const codigo =
-          normalizar(
-            val(r,'Código')
-          );
+    if(
+      equipamentoIgnorado(r)
+    ){
 
+      return;
 
-        return (
-          tipo ===
-          'troca de turno' ||
-
-          codigo ===
-          'troca de turno'
-        );
-
-      }
-    );
+    }
 
 
-  trocas.forEach(r=>{
+    const tipo =
+      normalizar(
+        val(r,'Tipo')
+      );
+
+    const codigo =
+      normalizar(
+        val(r,'Código')
+      );
+
+
+    if(
+      tipo !== 'troca de turno' &&
+      codigo !== 'troca de turno'
+    ){
+
+      return;
+
+    }
+
 
     const hora =
       horaMinutos(
@@ -1304,21 +1443,42 @@ function auditarTroca(rs){
       return;
 
 
-    const horarios = [
+    const esperado =
+      horarioOficialPorTurno(r);
 
-      420,
-      920,
-      1420
 
-    ];
+    if(esperado == null)
+      return;
+
+
+    const tolerancia =
+      toleranciaTroca(r);
+
+
+    const diferenca =
+      hora - esperado;
 
 
     /*
-      Horário correto.
+      ABS = considera antes ou depois.
+
+      Exemplo TRADIMAQ:
+
+      esperado 15:20
+      apontou 14:51
+
+      diferença = -29
+
+      ABS = 29
+
+      29 <= 30
+
+      NÃO é erro.
     */
 
     if(
-      horarios.includes(hora)
+      Math.abs(diferenca) <=
+      tolerancia
     ){
 
       return;
@@ -1326,41 +1486,26 @@ function auditarTroca(rs){
     }
 
 
-    /*
-      Horário oficial mais próximo.
-    */
-
-    const maisProximo =
-      horarios.reduce(
-        (a,b) =>
-
-          Math.abs(b-hora) <
-          Math.abs(a-hora)
-            ? b
-            : a
-      );
-
-
-    const esperado =
+    const esperadoTexto =
       String(
         Math.floor(
-          maisProximo / 60
+          esperado / 60
         )
       ).padStart(2,'0') +
 
       ':' +
 
       String(
-        maisProximo % 60
+        esperado % 60
       ).padStart(2,'0');
 
 
     add(
       r,
       'Troca de turno',
-      'Troca de turno fora do horário',
-      esperado,
-      hora - maisProximo
+      'Troca de turno fora da tolerância',
+      esperadoTexto,
+      diferenca
     );
 
   });
@@ -1377,21 +1522,28 @@ function audit(){
   errors = [];
 
 
-  /*
-    Agrupamento:
-
-    Equipamento + Data
-  */
-
   const grupos =
     new Map();
 
 
   rows.forEach(r=>{
 
+    /*
+      Equipamentos ignorados
+      nem entram nos grupos.
+    */
+
+    if(
+      equipamentoIgnorado(r)
+    ){
+
+      return;
+
+    }
+
+
     const equipamento =
       val(r,'Equipamento');
-
 
     const data =
       val(r,'Data Início');
@@ -1422,24 +1574,17 @@ function audit(){
   });
 
 
-  /*
-    Executa auditoria
-    equipamento por equipamento.
-  */
-
   for(
     const registros
     of grupos.values()
   ){
 
     registros.sort(
-      (a,b)=>
-
+      (a,b) =>
         (
           dateObj(a)?.getTime() ||
           0
         ) -
-
         (
           dateObj(b)?.getTime() ||
           0
@@ -1478,6 +1623,9 @@ function audit(){
 
 function render(){
 
+  const grupo =
+    $('fGrupo').value;
+
   const equipamento =
     $('fEquip').value;
 
@@ -1494,6 +1642,9 @@ function render(){
   filtered =
     errors.filter(
       e =>
+
+        (!grupo ||
+          e.grupo === grupo) &&
 
         (!equipamento ||
           e.equip === equipamento) &&
@@ -1523,6 +1674,8 @@ function render(){
         e => `
 
 <tr>
+
+<td>${esc(e.grupo)}</td>
 
 <td>${esc(e.equip)}</td>
 
@@ -1603,11 +1756,25 @@ ${esc(e.motivo)}
     ).length;
 
 
+  const gruposCount =
+    unique(
+      rows.map(
+        r =>
+          getGrupo(r)
+      )
+    ).length;
+
+
   $('metrics').innerHTML = [
 
     [
       'Registros',
       rows.length
+    ],
+
+    [
+      'Grupos',
+      gruposCount
     ],
 
     [
@@ -1858,6 +2025,15 @@ $('file').onchange =
 
 
       opts(
+        'fGrupo',
+        rows.map(
+          r =>
+            getGrupo(r)
+        )
+      );
+
+
+      opts(
         'fEquip',
         rows.map(
           r =>
@@ -1893,10 +2069,6 @@ $('file').onchange =
       );
 
 
-      /*
-        Executa auditoria.
-      */
-
       audit();
 
 
@@ -1930,6 +2102,7 @@ $('file').onchange =
 ===================================================== */
 
 [
+  'fGrupo',
   'fEquip',
   'fOp',
   'fDate',
@@ -1954,6 +2127,7 @@ $('clear').onclick =
   () => {
 
     [
+      'fGrupo',
       'fEquip',
       'fOp',
       'fDate',
@@ -1972,7 +2146,7 @@ $('clear').onclick =
 
 
 /* =====================================================
-   EXPORTAR CSV
+   EXPORTAÇÃO CSV
 ===================================================== */
 
 $('export').onclick =
@@ -1980,6 +2154,7 @@ $('export').onclick =
 
     const colunas = [
 
+      'Grupo',
       'Equipamento',
       'Tipo Equipamento',
       'Data',
@@ -2005,6 +2180,7 @@ $('export').onclick =
       ...filtered.map(
         e => [
 
+          e.grupo,
           e.equip,
           e.tipoEq,
           e.date,
@@ -2078,4 +2254,4 @@ $('export').onclick =
 
 </body>
 
-</html>  
+</html>
