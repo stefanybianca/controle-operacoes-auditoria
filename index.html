@@ -300,25 +300,24 @@ Exportar CSV
 
 <script>
 
-let rows = [];
-let errors = [];
-let filtered = [];
-let headers = [];
+let rows=[];
+let errors=[];
+let filtered=[];
+let headers=[];
 
 
-const $ = id => document.getElementById(id);
+const $=id=>document.getElementById(id);
 
 
-const val = (r,n) =>
-  r[n] == null ? '' : String(r[n]).trim();
+function val(r,n){
+  return r[n]==null ? '' : String(r[n]).trim();
+}
 
 
 function unique(a){
 
   return [
-    ...new Set(
-      a.filter(Boolean)
-    )
+    ...new Set(a.filter(Boolean))
   ].sort(
     (a,b)=>a.localeCompare(b,'pt-BR')
   );
@@ -328,9 +327,9 @@ function unique(a){
 
 function esc(x){
 
-  return String(x ?? '').replace(
+  return String(x??'').replace(
     /[&<>"']/g,
-    c => ({
+    c=>({
       '&':'&amp;',
       '<':'&lt;',
       '>':'&gt;',
@@ -344,8 +343,8 @@ function esc(x){
 
 function opts(id,a){
 
-  $(id).innerHTML =
-    '<option value="">Todos</option>' +
+  $(id).innerHTML=
+    '<option value="">Todos</option>'+
     unique(a)
       .map(x=>'<option>'+esc(x)+'</option>')
       .join('');
@@ -353,32 +352,42 @@ function opts(id,a){
 }
 
 
+/*
+====================================================
+DATA E HORA
+====================================================
+*/
+
 function parseDateTime(date,time){
 
-  date = String(date || '').trim();
-  time = String(time || '00:00:00').trim();
+  date=String(date||'').trim();
+  time=String(time||'00:00:00').trim();
 
-  let p = date.split('/');
+  const p=date.split('/');
 
-  if(p.length === 3){
+  if(p.length===3){
+
+    const partesHora=time.split(':').map(Number);
 
     return new Date(
       Number(p[2]),
       Number(p[1])-1,
       Number(p[0]),
-      ...time.split(':').map(Number)
+      partesHora[0]||0,
+      partesHora[1]||0,
+      partesHora[2]||0
     );
 
   }
 
-  return new Date(date + ' ' + time);
+  return new Date(date+' '+time);
 
 }
 
 
 function dateObj(r){
 
-  const x = parseDateTime(
+  const x=parseDateTime(
     val(r,'Data Início'),
     val(r,'Hora Início')
   );
@@ -390,7 +399,7 @@ function dateObj(r){
 
 function endObj(r){
 
-  const x = parseDateTime(
+  const x=parseDateTime(
     val(r,'Data Fim'),
     val(r,'Hora Fim')
   );
@@ -402,10 +411,11 @@ function endObj(r){
 
 function mins(r){
 
-  const a = dateObj(r);
-  const b = endObj(r);
+  const a=dateObj(r);
+  const b=endObj(r);
 
-  if(!a || !b) return null;
+  if(!a||!b)
+    return null;
 
   return (b-a)/60000;
 
@@ -414,16 +424,24 @@ function mins(r){
 
 function hm(r){
 
-  const m =
+  const m=
     val(r,'Hora Início')
       .match(/^(\d{1,2}):(\d{2})/);
 
-  if(!m) return null;
+  if(!m)
+    return null;
 
-  return Number(m[1])*60 + Number(m[2]);
+  return Number(m[1])*60+
+         Number(m[2]);
 
 }
 
+
+/*
+====================================================
+ADICIONA ERRO
+====================================================
+*/
 
 function add(
   r,
@@ -442,7 +460,7 @@ function add(
     date:val(r,'Data Início'),
 
     op:
-      val(r,'Operador') ||
+      val(r,'Operador')||
       'Operador não identificado',
 
     mat:val(r,'Matrícula Operador'),
@@ -472,35 +490,30 @@ function add(
 
 /*
 ====================================================
-AUDITORIA PRINCIPAL
+AUDITORIA
 ====================================================
 */
 
 function audit(){
 
-  errors = [];
+  errors=[];
+
+  const groups=new Map();
 
 
   /*
-  --------------------------------------------------
-  AGRUPA POR EQUIPAMENTO + DATA
-  --------------------------------------------------
+  Agrupa equipamento + data
   */
-
-  const groups = new Map();
-
 
   rows.forEach(r=>{
 
-    const k =
-      val(r,'Equipamento') +
-      '|' +
+    const k=
+      val(r,'Equipamento')+
+      '|'+
       val(r,'Data Início');
-
 
     if(!groups.has(k))
       groups.set(k,[]);
-
 
     groups.get(k).push(r);
 
@@ -508,311 +521,99 @@ function audit(){
 
 
   /*
-  --------------------------------------------------
-  ANALISA CADA EQUIPAMENTO/DIA
-  --------------------------------------------------
+  Analisa cada equipamento/dia
   */
 
   for(const rs of groups.values()){
 
-
-    /*
-    Ordena cronologicamente
-    */
-
     rs.sort(
       (a,b)=>
-        (dateObj(a)?.getTime() || 0) -
-        (dateObj(b)?.getTime() || 0)
+        (dateObj(a)?.getTime()||0)-
+        (dateObj(b)?.getTime()||0)
     );
 
 
     /*
-    ------------------------------------------------
-    EXCESSO DE ALMOÇO
-    ------------------------------------------------
-
-    IMPORTANTE:
-
-    "Excesso de Almoço" JÁ É um apontamento
-    de almoço.
-
-    Portanto NÃO pode gerar também
-    "Almoço não apontado".
-    ------------------------------------------------
-    */
-
-    rs.forEach(r=>{
-
-      const codigo =
-        val(r,'Código');
-
-
-      if(codigo === 'Excesso de Almoço'){
-
-        add(
-          r,
-          'Almoço',
-          'Excesso de Almoço'
-        );
-
-      }
-
-
-      if(codigo === 'Excesso de Janta'){
-
-        add(
-          r,
-          'Janta',
-          'Excesso de Janta'
-        );
-
-      }
-
-    });
-
-
-    /*
-    ------------------------------------------------
+    ================================================
     AGRUPA POR OPERADOR
-    ------------------------------------------------
+    ================================================
     */
 
-    const byOp = new Map();
+    const byOp=new Map();
 
 
     rs.forEach(r=>{
 
-      const o =
+      const operador=
         val(r,'Operador');
 
 
-      if(o){
-
-        if(!byOp.has(o))
-          byOp.set(o,[]);
+      if(!operador)
+        return;
 
 
-        byOp.get(o).push(r);
+      if(!byOp.has(operador))
+        byOp.set(operador,[]);
 
-      }
+
+      byOp.get(operador).push(r);
 
     });
 
 
     /*
-    ------------------------------------------------
-    ANALISA CADA OPERADOR
-    ------------------------------------------------
+    ================================================
+    ALMOÇO E JANTA
+    ================================================
     */
 
     for(const os of byOp.values()){
 
 
       /*
-      ==============================================
-      FUNÇÃO DE ALMOÇO / JANTA
-      ==============================================
+      ----------------------------------------------
+      ALMOÇO
+      ----------------------------------------------
+
+      Procuramos EXATAMENTE:
+
+      Código = Almoço
+
+      "Excesso de Almoço" é ignorado.
       */
 
-      function meal(
-        code,
-        a,
-        b,
-        label
-      ){
+      const almocos=
+        os.filter(r=>
+          val(r,'Código')==='Almoço'
+        );
 
 
-        /*
-        Verifica se existe algum registro
-        dentro do horário da refeição.
-        */
+      /*
+      Se não houver almoço,
+      gera um único erro.
+      */
 
-        const eligible =
-          os.some(r=>{
+      if(almocos.length===0){
 
-            const m = hm(r);
-
-            return (
-              m != null &&
-              m >= a &&
-              m < b &&
-              val(r,'Código') !== 'Inativo'
-            );
-
-          });
-
-
-        if(!eligible)
-          return;
-
-
-        /*
-        ------------------------------------------------
-        CÓDIGOS QUE REPRESENTAM APONTAMENTO VÁLIDO
-        ------------------------------------------------
-
-        Almoço:
-        - Almoço
-        - Excesso de Almoço
-
-        Janta:
-        - Janta
-        - Excesso de Janta
-        ------------------------------------------------
-        */
-
-        const validCodes =
-          label === 'Almoço'
-            ? [
-                'Almoço',
-                'Excesso de Almoço'
-              ]
-            : [
-                'Janta',
-                'Excesso de Janta'
-              ];
-
-
-        /*
-        Procura os apontamentos válidos.
-        */
-
-        const ms =
-          os.filter(r=>{
-
-            const m = hm(r);
+        const base=
+          os.find(r=>{
+            const m=hm(r);
 
             return (
-              m != null &&
-              m >= a &&
-              m < b &&
-              validCodes.includes(
-                val(r,'Código')
-              )
+              m!=null &&
+              m>=660 &&
+              m<780
             );
+          })||os[0];
 
-          });
 
-
-        /*
-        ------------------------------------------------
-        NÃO ENCONTROU ALMOÇO/JANTA
-        ------------------------------------------------
-
-        Só agora podemos dizer que não houve
-        apontamento.
-        ------------------------------------------------
-        */
-
-        if(!ms.length){
-
-          const base =
-            os.find(r=>{
-
-              const m = hm(r);
-
-              return (
-                m != null &&
-                m >= a &&
-                m < b
-              );
-
-            }) || os[0];
-
+        if(base){
 
           add(
             base,
-            label,
-            label + ' não apontado'
+            'Almoço',
+            'Almoço não apontado'
           );
-
-
-          return;
-
-        }
-
-
-        /*
-        ------------------------------------------------
-        VERIFICA DURAÇÃO APENAS DO APONTAMENTO
-        NORMAL
-        ------------------------------------------------
-
-        NÃO aplica regra de duração ao
-        "Excesso de Almoço", porque ele já é
-        uma classificação pronta da planilha.
-        ------------------------------------------------
-        */
-
-        ms.forEach(r=>{
-
-          const codigo =
-            val(r,'Código');
-
-          const d =
-            mins(r);
-
-
-          if(
-            codigo === label &&
-            d != null
-          ){
-
-            /*
-            Menor que 1 hora
-            */
-
-            if(d < 60){
-
-              add(
-                r,
-                label,
-                label +
-                ' menor que 1 hora'
-              );
-
-            }
-
-
-            /*
-            Maior que 1h10
-            */
-
-            else if(d > 70){
-
-              add(
-                r,
-                label,
-                label +
-                ' maior que 1h10'
-              );
-
-            }
-
-          }
-
-        });
-
-
-        /*
-        ------------------------------------------------
-        DUPLICIDADE
-        ------------------------------------------------
-        */
-
-        if(ms.length > 1){
-
-          ms.slice(1).forEach(r=>{
-
-            add(
-              r,
-              label,
-              label +
-              ' duplicado'
-            );
-
-          });
 
         }
 
@@ -820,88 +621,157 @@ function audit(){
 
 
       /*
-      ==============================================
-      HORÁRIOS
-      ==============================================
+      Se houver almoço,
+      verifica duração.
       */
 
-      meal(
-        'Almoço',
-        660,
-        780,
-        'Almoço'
-      );
+      almocos.forEach(r=>{
+
+        const d=mins(r);
 
 
-      meal(
-        'Janta',
-        1140,
-        1260,
-        'Janta'
-      );
+        if(d!=null && d<60){
+
+          add(
+            r,
+            'Almoço',
+            'Almoço menor que 1 hora'
+          );
+
+        }
+
+      });
+
+
+      /*
+      ----------------------------------------------
+      JANTA
+      ----------------------------------------------
+      */
+
+      const jantas=
+        os.filter(r=>
+          val(r,'Código')==='Janta'
+        );
+
+
+      /*
+      Se não houver janta,
+      gera um único erro.
+      */
+
+      if(jantas.length===0){
+
+        const base=
+          os.find(r=>{
+            const m=hm(r);
+
+            return (
+              m!=null &&
+              m>=1140 &&
+              m<1260
+            );
+
+          })||os[0];
+
+
+        if(base){
+
+          add(
+            base,
+            'Janta',
+            'Janta não apontada'
+          );
+
+        }
+
+      }
+
+
+      /*
+      Se houver janta,
+      verifica duração.
+      */
+
+      jantas.forEach(r=>{
+
+        const d=mins(r);
+
+
+        if(d!=null && d<60){
+
+          add(
+            r,
+            'Janta',
+            'Janta menor que 1 hora'
+          );
+
+        }
+
+      });
 
     }
 
 
     /*
-    ==================================================
+    ================================================
     TROCA DE TURNO
-    ==================================================
+    ================================================
     */
 
     rs
-      .filter(
-        r =>
-          val(r,'Código') ===
-          'Troca de Turno'
+      .filter(r=>
+        val(r,'Código')==='Troca de Turno'
       )
       .forEach(r=>{
 
-        const m = hm(r);
+        const m=hm(r);
 
-        if(m == null)
+        if(m==null)
           return;
 
 
         /*
-        Horários esperados:
+        Horários corretos:
+
         07:00
         15:20
         23:40
-
-        Mantemos aqui a lógica original
-        por enquanto.
         */
 
-        const expected = [
+        const expected=[
           420,
           920,
           1420
         ];
 
 
-        const n =
-          expected.reduce(
-            (x,y)=>
-              Math.abs(y-m) <
-              Math.abs(x-m)
-                ? y
-                : x
-          );
+        /*
+        Considera correto somente quando
+        o horário bate exatamente.
+        */
+
+        if(!expected.includes(m)){
+
+          const maisProximo=
+            expected.reduce(
+              (x,y)=>
+                Math.abs(y-m)<
+                Math.abs(x-m)
+                  ?y
+                  :x
+            );
 
 
-        const d = m-n;
-
-
-        if(d !== 0){
-
-          const e =
+          const horarioEsperado=
             String(
-              Math.floor(n/60)
-            ).padStart(2,'0') +
-            ':' +
+              Math.floor(
+                maisProximo/60
+              )
+            ).padStart(2,'0')+
+            ':'+
             String(
-              n%60
+              maisProximo%60
             ).padStart(2,'0');
 
 
@@ -909,8 +779,8 @@ function audit(){
             r,
             'Troca de turno',
             'Troca de turno fora do horário',
-            e,
-            d
+            horarioEsperado,
+            m-maisProximo
           );
 
         }
@@ -927,35 +797,35 @@ function audit(){
 
 /*
 ====================================================
-RENDERIZAÇÃO
+RENDER
 ====================================================
 */
 
 function render(){
 
-  const a = $('fEquip').value;
-  const b = $('fOp').value;
-  const c = $('fDate').value;
-  const d = $('fType').value;
+  const a=$('fEquip').value;
+  const b=$('fOp').value;
+  const c=$('fDate').value;
+  const d=$('fType').value;
 
 
-  filtered =
+  filtered=
     errors.filter(e=>
-      (!a || e.equip===a) &&
-      (!b || e.op===b) &&
-      (!c || e.date===c) &&
-      (!d || e.type===d)
+      (!a||e.equip===a)&&
+      (!b||e.op===b)&&
+      (!c||e.date===c)&&
+      (!d||e.type===d)
     );
 
 
-  $('count').textContent =
-    filtered.length +
-    ' erro(s) exibido(s) de ' +
-    errors.length +
+  $('count').textContent=
+    filtered.length+
+    ' erro(s) exibido(s) de '+
+    errors.length+
     ' encontrado(s).';
 
 
-  $('errors').innerHTML =
+  $('errors').innerHTML=
     filtered.map(e=>`
 
 <tr>
@@ -981,11 +851,7 @@ function render(){
 <td>${esc(e.fim)}</td>
 
 <td>
-${
-  e.dur == null
-    ? ''
-    : e.dur.toFixed(2)
-}
+${e.dur==null?'':e.dur.toFixed(2)}
 </td>
 
 <td class="error">
@@ -1001,7 +867,7 @@ ${esc(e.motivo)}
 `).join('');
 
 
-  const u =
+  const equipamentos=
     unique(
       rows.map(
         r=>val(r,'Equipamento')
@@ -1009,7 +875,7 @@ ${esc(e.motivo)}
     ).length;
 
 
-  const o =
+  const operadores=
     unique(
       rows.map(
         r=>val(r,'Operador')
@@ -1017,7 +883,7 @@ ${esc(e.motivo)}
     ).length;
 
 
-  const ds =
+  const datas=
     unique(
       rows.map(
         r=>val(r,'Data Início')
@@ -1025,15 +891,15 @@ ${esc(e.motivo)}
     ).length;
 
 
-  $('metrics').innerHTML = [
+  $('metrics').innerHTML=[
 
     ['Registros',rows.length],
 
-    ['Equipamentos',u],
+    ['Equipamentos',equipamentos],
 
-    ['Operadores',o],
+    ['Operadores',operadores],
 
-    ['Datas',ds],
+    ['Datas',datas],
 
     ['Total de erros',errors.length],
 
@@ -1081,48 +947,48 @@ PRÉVIA
 
 function preview(){
 
-  $('info').textContent =
-    rows.length +
-    ' registros; ' +
-    headers.length +
+  $('info').textContent=
+    rows.length+
+    ' registros; '+
+    headers.length+
     ' colunas.';
 
 
-  const h =
-    '<thead><tr>' +
+  const h=
+    '<thead><tr>'+
     headers
       .map(
-        x =>
-          '<th>' +
-          esc(x || '(coluna sem nome)') +
+        x=>
+          '<th>'+
+          esc(x||'(coluna sem nome)')+
           '</th>'
       )
-      .join('') +
+      .join('')+
     '</tr></thead>';
 
 
-  const b =
+  const b=
     rows
       .slice(0,10)
       .map(r=>
-        '<tr>' +
+        '<tr>'+
         headers
           .map(
-            x =>
-              '<td>' +
-              esc(val(r,x)) +
+            x=>
+              '<td>'+
+              esc(val(r,x))+
               '</td>'
           )
-          .join('') +
+          .join('')+
         '</tr>'
       )
       .join('');
 
 
-  $('preview').innerHTML =
-    h +
-    '<tbody>' +
-    b +
+  $('preview').innerHTML=
+    h+
+    '<tbody>'+
+    b+
     '</tbody>';
 
 }
@@ -1134,12 +1000,9 @@ LEITURA DO EXCEL
 ====================================================
 */
 
-$('file').onchange =
-async e=>{
+$('file').onchange=async e=>{
 
-  const f =
-    e.target.files[0];
-
+  const f=e.target.files[0];
 
   if(!f)
     return;
@@ -1147,7 +1010,7 @@ async e=>{
 
   try{
 
-    const wb =
+    const wb=
       XLSX.read(
         await f.arrayBuffer(),
         {
@@ -1156,13 +1019,13 @@ async e=>{
       );
 
 
-    const ws =
+    const ws=
       wb.Sheets[
         wb.SheetNames[0]
       ];
 
 
-    const a =
+    const a=
       XLSX.utils.sheet_to_json(
         ws,
         {
@@ -1173,49 +1036,43 @@ async e=>{
       );
 
 
-    /*
-    A primeira linha da planilha é ignorada
-    e a segunda é usada como cabeçalho,
-    mantendo exatamente a lógica anterior.
-    */
-
-    headers =
-      (a[1] || [])
+    headers=
+      (a[1]||[])
         .map(String);
 
 
-    rows =
+    rows=
       a
         .slice(2)
         .filter(
-          r =>
+          r=>
             r.some(
-              x =>
-                String(x).trim() !== ''
+              x=>
+                String(x).trim()!==''
             )
         )
         .map(r=>{
 
-          const o = {};
+          const o={};
+
 
           headers.forEach(
             (h,i)=>{
-              o[h] =
-                r[i] ?? '';
+              o[h]=r[i]??'';
             }
           );
+
 
           return o;
 
         });
 
 
-    $('status').className =
-      'status';
+    $('status').className='status';
 
 
-    $('status').textContent =
-      'Planilha carregada com sucesso: ' +
+    $('status').textContent=
+      'Planilha carregada com sucesso: '+
       f.name;
 
 
@@ -1264,12 +1121,12 @@ async e=>{
 
   }catch(err){
 
-    $('status').className =
+    $('status').className=
       'status error';
 
 
-    $('status').textContent =
-      'Erro ao ler a planilha: ' +
+    $('status').textContent=
+      'Erro ao ler a planilha: '+
       err.message;
 
   }
@@ -1289,13 +1146,12 @@ FILTROS
   'fDate',
   'fType'
 ].forEach(
-  id =>
-    $(id).onchange =
-      render
+  id=>
+    $(id).onchange=render
 );
 
 
-$('clear').onclick = ()=>{
+$('clear').onclick=()=>{
 
   [
     'fEquip',
@@ -1303,8 +1159,7 @@ $('clear').onclick = ()=>{
     'fDate',
     'fType'
   ].forEach(
-    id =>
-      $(id).value=''
+    id=>$(id).value=''
   );
 
 
@@ -1319,9 +1174,9 @@ EXPORTAÇÃO CSV
 ====================================================
 */
 
-$('export').onclick = ()=>{
+$('export').onclick=()=>{
 
-  const c = [
+  const c=[
 
     'Equipamento',
     'Tipo Equipamento',
@@ -1341,38 +1196,25 @@ $('export').onclick = ()=>{
   ];
 
 
-  const l = [
+  const l=[
 
     c,
 
     ...filtered.map(e=>[
 
       e.equip,
-
       e.tipoEq,
-
       e.date,
-
       e.op,
-
       e.mat,
-
       e.turn,
-
       e.type,
-
       e.codigo,
-
       e.ini,
-
       e.fim,
-
-      e.dur ?? '',
-
+      e.dur??'',
       e.motivo,
-
       e.expected,
-
       e.diff
 
     ])
@@ -1380,21 +1222,21 @@ $('export').onclick = ()=>{
   ];
 
 
-  const csv =
-    '\ufeff' +
+  const csv=
+    '\ufeff'+
     l
       .map(
-        r =>
+        r=>
           r
             .map(
-              x =>
-                '"' +
+              x=>
+                '"'+
                 String(
-                  x ?? ''
+                  x??''
                 ).replaceAll(
                   '"',
                   '""'
-                ) +
+                )+
                 '"'
             )
             .join(';')
@@ -1402,11 +1244,11 @@ $('export').onclick = ()=>{
       .join('\n');
 
 
-  const a =
+  const a=
     document.createElement('a');
 
 
-  a.href =
+  a.href=
     URL.createObjectURL(
       new Blob(
         [csv],
@@ -1417,7 +1259,7 @@ $('export').onclick = ()=>{
     );
 
 
-  a.download =
+  a.download=
     'relatorio_auditoria.csv';
 
 
