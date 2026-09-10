@@ -1,212 +1,4380 @@
-```html
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Analisador de Tempo de Ciclo - Mineração</title>
+<meta charset="UTF-8">
 
-    <link rel="stylesheet" href="style.css">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
 
-    <!-- Biblioteca para leitura de Excel -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<title>MineCycle | Inteligência Operacional</title>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+<style>
+
+/* =====================================================
+   CONFIGURAÇÕES
+===================================================== */
+
+:root{
+
+    --blue:#1769e0;
+    --blue-dark:#10233f;
+    --blue-light:#eaf2ff;
+
+    --background:#f4f7fb;
+    --white:#ffffff;
+
+    --text:#172033;
+    --muted:#7b8799;
+
+    --border:#e5eaf1;
+
+    --green:#159267;
+    --orange:#d88719;
+    --red:#d84747;
+
+}
+
+
+*{
+    box-sizing:border-box;
+}
+
+
+body{
+
+    margin:0;
+
+    font-family:
+    Inter,
+    Segoe UI,
+    Arial,
+    sans-serif;
+
+    background:var(--background);
+
+    color:var(--text);
+
+}
+
+
+button,
+input,
+select{
+
+    font-family:inherit;
+
+}
+
+
+/* =====================================================
+   APP
+===================================================== */
+
+.app{
+
+    display:flex;
+
+    min-height:100vh;
+
+}
+
+
+/* =====================================================
+   SIDEBAR
+===================================================== */
+
+.sidebar{
+
+    width:245px;
+
+    background:var(--blue-dark);
+
+    color:white;
+
+    padding:25px 16px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    position:fixed;
+
+    left:0;
+    top:0;
+    bottom:0;
+
+}
+
+
+.logo{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:11px;
+
+    padding:5px 10px 35px;
+
+}
+
+
+.logo-icon{
+
+    width:40px;
+    height:40px;
+
+    background:white;
+
+    color:var(--blue);
+
+    border-radius:11px;
+
+    display:grid;
+
+    place-items:center;
+
+    font-weight:900;
+
+    font-size:20px;
+
+}
+
+
+.logo strong{
+
+    display:block;
+
+    font-size:17px;
+
+}
+
+
+.logo span{
+
+    display:block;
+
+    color:#9daec7;
+
+    font-size:10px;
+
+    margin-top:3px;
+
+}
+
+
+.menu-area{
+
+    display:grid;
+
+    gap:6px;
+
+}
+
+
+.menu{
+
+    border:0;
+
+    background:transparent;
+
+    color:#aebbd0;
+
+    padding:13px;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    text-align:left;
+
+    font-size:13px;
+
+    font-weight:600;
+
+    display:flex;
+
+    gap:12px;
+
+    align-items:center;
+
+}
+
+
+.menu:hover{
+
+    background:
+    rgba(255,255,255,.07);
+
+    color:white;
+
+}
+
+
+.menu.active{
+
+    background:
+    rgba(255,255,255,.10);
+
+    color:white;
+
+    box-shadow:
+    inset 3px 0 var(--blue);
+
+}
+
+
+.menu-icon{
+
+    width:20px;
+
+    text-align:center;
+
+}
+
+
+.sidebar-bottom{
+
+    margin-top:auto;
+
+    padding:15px;
+
+    border:
+    1px solid rgba(255,255,255,.1);
+
+    background:
+    rgba(255,255,255,.04);
+
+    border-radius:12px;
+
+    font-size:11px;
+
+    color:#9daec7;
+
+    line-height:1.5;
+
+}
+
+
+.sidebar-bottom strong{
+
+    display:block;
+
+    color:white;
+
+    margin-bottom:5px;
+
+}
+
+
+/* =====================================================
+   MAIN
+===================================================== */
+
+.main{
+
+    margin-left:245px;
+
+    width:calc(100% - 245px);
+
+    min-height:100vh;
+
+}
+
+
+/* =====================================================
+   HEADER
+===================================================== */
+
+.header{
+
+    height:86px;
+
+    background:white;
+
+    border-bottom:
+    1px solid var(--border);
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    padding:0 34px;
+
+}
+
+
+.header-small{
+
+    color:var(--blue);
+
+    font-size:10px;
+
+    font-weight:800;
+
+    letter-spacing:1.5px;
+
+}
+
+
+.header h1{
+
+    margin:5px 0 0;
+
+    font-size:23px;
+
+}
+
+
+.upload-button{
+
+    background:var(--blue);
+
+    color:white;
+
+    padding:12px 18px;
+
+    border-radius:9px;
+
+    font-size:13px;
+
+    font-weight:700;
+
+    cursor:pointer;
+
+    border:0;
+
+}
+
+
+.upload-button:hover{
+
+    opacity:.9;
+
+}
+
+
+.upload-button input{
+
+    display:none;
+
+}
+
+
+/* =====================================================
+   CONTENT
+===================================================== */
+
+.content{
+
+    padding:28px 34px;
+
+    max-width:1600px;
+
+}
+
+
+.hidden{
+
+    display:none !important;
+
+}
+
+
+/* =====================================================
+   WELCOME
+===================================================== */
+
+.welcome{
+
+    min-height:550px;
+
+    border:
+    1px solid var(--border);
+
+    border-radius:20px;
+
+    background:
+    linear-gradient(
+        120deg,
+        #ffffff,
+        #f1f6ff
+    );
+
+    display:flex;
+
+    align-items:center;
+
+    gap:40px;
+
+    padding:60px;
+
+    box-shadow:
+    0 10px 35px
+    rgba(20,45,80,.05);
+
+}
+
+
+.welcome-icon{
+
+    width:110px;
+    height:110px;
+
+    border-radius:30px;
+
+    background:var(--blue-light);
+
+    color:var(--blue);
+
+    display:grid;
+
+    place-items:center;
+
+    font-size:50px;
+
+    flex-shrink:0;
+
+}
+
+
+.welcome-label{
+
+    color:var(--blue);
+
+    font-size:10px;
+
+    letter-spacing:1.5px;
+
+    font-weight:800;
+
+}
+
+
+.welcome h2{
+
+    max-width:720px;
+
+    font-size:40px;
+
+    line-height:1.05;
+
+    margin:10px 0;
+
+}
+
+
+.welcome p{
+
+    max-width:700px;
+
+    color:var(--muted);
+
+    line-height:1.7;
+
+    font-size:14px;
+
+}
+
+
+.welcome-button{
+
+    display:inline-block;
+
+    margin-top:15px;
+
+    padding:13px 20px;
+
+    background:var(--blue);
+
+    color:white;
+
+    border-radius:9px;
+
+    cursor:pointer;
+
+    font-weight:700;
+
+}
+
+
+.welcome-button input{
+
+    display:none;
+
+}
+
+
+/* =====================================================
+   FILTERS
+===================================================== */
+
+.card{
+
+    background:white;
+
+    border:
+    1px solid var(--border);
+
+    border-radius:14px;
+
+    padding:20px;
+
+    box-shadow:
+    0 4px 18px
+    rgba(20,42,75,.035);
+
+}
+
+
+.filters{
+
+    margin-bottom:18px;
+
+}
+
+
+.filters-title{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:16px;
+
+}
+
+
+.filters-title strong{
+
+    font-size:14px;
+
+}
+
+
+.filters-title span{
+
+    color:var(--muted);
+
+    font-size:11px;
+
+}
+
+
+.filters-grid{
+
+    display:grid;
+
+    grid-template-columns:
+    repeat(4,1fr);
+
+    gap:12px;
+
+}
+
+
+.filter label{
+
+    color:var(--muted);
+
+    font-size:11px;
+
+    font-weight:700;
+
+}
+
+
+.filter select{
+
+    width:100%;
+
+    height:40px;
+
+    margin-top:6px;
+
+    border:
+    1px solid var(--border);
+
+    border-radius:8px;
+
+    padding:0 10px;
+
+    background:white;
+
+    color:var(--text);
+
+}
+
+
+/* =====================================================
+   KPI
+===================================================== */
+
+.kpis{
+
+    display:grid;
+
+    grid-template-columns:
+    repeat(5,1fr);
+
+    gap:12px;
+
+    margin-bottom:18px;
+
+}
+
+
+.kpi{
+
+    background:white;
+
+    border:
+    1px solid var(--border);
+
+    border-radius:14px;
+
+    padding:18px;
+
+}
+
+
+.kpi span{
+
+    display:block;
+
+    color:var(--muted);
+
+    font-size:11px;
+
+    font-weight:700;
+
+}
+
+
+.kpi strong{
+
+    display:block;
+
+    font-size:26px;
+
+    margin-top:7px;
+
+}
+
+
+.kpi small{
+
+    color:var(--muted);
+
+    font-size:10px;
+
+}
+
+
+.kpi.main-kpi{
+
+    background:var(--blue-dark);
+
+    color:white;
+
+}
+
+
+.kpi.main-kpi span,
+.kpi.main-kpi small{
+
+    color:#aebbd0;
+
+}
+
+
+/* =====================================================
+   GRID
+===================================================== */
+
+.grid{
+
+    display:grid;
+
+    grid-template-columns:
+    1fr 1fr;
+
+    gap:18px;
+
+}
+
+
+.margin-top{
+
+    margin-top:18px;
+
+}
+
+
+/* =====================================================
+   CARD TITLE
+===================================================== */
+
+.card-title{
+
+    display:flex;
+
+    align-items:flex-start;
+
+    justify-content:space-between;
+
+    margin-bottom:18px;
+
+}
+
+
+.card-title h3{
+
+    margin:0;
+
+    font-size:16px;
+
+}
+
+
+.card-title span{
+
+    display:block;
+
+    color:var(--muted);
+
+    font-size:11px;
+
+    margin-top:4px;
+
+}
+
+
+.badge{
+
+    background:var(--blue-light);
+
+    color:var(--blue);
+
+    border-radius:20px;
+
+    padding:6px 9px;
+
+    font-size:9px;
+
+    font-weight:800;
+
+}
+
+
+/* =====================================================
+   CHART
+===================================================== */
+
+.chart{
+
+    height:290px;
+
+}
+
+
+/* =====================================================
+   BARS
+===================================================== */
+
+.gargalo{
+
+    margin:17px 0;
+
+}
+
+
+.gargalo-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    font-size:12px;
+
+    margin-bottom:7px;
+
+}
+
+
+.gargalo-header strong{
+
+    font-size:12px;
+
+}
+
+
+.progress{
+
+    height:9px;
+
+    background:#edf1f5;
+
+    border-radius:10px;
+
+    overflow:hidden;
+
+}
+
+
+.progress div{
+
+    height:100%;
+
+    background:var(--blue);
+
+    border-radius:10px;
+
+}
+
+
+/* =====================================================
+   SIMULADOR
+===================================================== */
+
+.simulator{
+
+    display:flex;
+
+    align-items:end;
+
+    gap:10px;
+
+}
+
+
+.simulator label{
+
+    color:var(--muted);
+
+    font-size:11px;
+
+    font-weight:700;
+
+}
+
+
+.input-area{
+
+    display:flex;
+
+    margin-top:6px;
+
+}
+
+
+.input-area input{
+
+    width:100px;
+
+    height:42px;
+
+    border:
+    1px solid var(--border);
+
+    border-radius:
+    8px 0 0 8px;
+
+    padding:0 10px;
+
+}
+
+
+.input-area span{
+
+    height:42px;
+
+    padding:0 10px;
+
+    display:grid;
+
+    place-items:center;
+
+    background:#f4f6f8;
+
+    border:
+    1px solid var(--border);
+
+    border-left:0;
+
+    border-radius:
+    0 8px 8px 0;
+
+    color:var(--muted);
+
+    font-size:10px;
+
+}
+
+
+.simulator button{
+
+    height:42px;
+
+    border:0;
+
+    border-radius:8px;
+
+    padding:0 17px;
+
+    background:var(--blue);
+
+    color:white;
+
+    font-weight:700;
+
+    cursor:pointer;
+
+}
+
+
+.sim-results{
+
+    display:grid;
+
+    grid-template-columns:
+    repeat(3,1fr);
+
+    gap:8px;
+
+    margin-top:18px;
+
+}
+
+
+.sim-result{
+
+    padding:14px;
+
+    border-radius:10px;
+
+    background:#f7f9fc;
+
+}
+
+
+.sim-result span{
+
+    display:block;
+
+    color:var(--muted);
+
+    font-size:10px;
+
+}
+
+
+.sim-result strong{
+
+    display:block;
+
+    font-size:21px;
+
+    margin-top:5px;
+
+}
+
+
+/* =====================================================
+   TABELAS
+===================================================== */
+
+.table-container{
+
+    overflow-x:auto;
+
+    border:
+    1px solid var(--border);
+
+    border-radius:10px;
+
+}
+
+
+table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+    font-size:12px;
+
+}
+
+
+th,
+td{
+
+    padding:13px 11px;
+
+    border-bottom:
+    1px solid var(--border);
+
+    text-align:left;
+
+    white-space:nowrap;
+
+}
+
+
+th{
+
+    background:#f8fafc;
+
+    color:var(--muted);
+
+    font-size:10px;
+
+    text-transform:uppercase;
+
+    letter-spacing:.5px;
+
+}
+
+
+tr:last-child td{
+
+    border-bottom:0;
+
+}
+
+
+.priority-high{
+
+    color:var(--red);
+
+    font-weight:800;
+
+}
+
+
+.priority-medium{
+
+    color:var(--orange);
+
+    font-weight:800;
+
+}
+
+
+.priority-normal{
+
+    color:var(--green);
+
+    font-weight:800;
+
+}
+
+
+/* =====================================================
+   INSIGHT
+===================================================== */
+
+.insight{
+
+    margin-top:18px;
+
+    padding:16px;
+
+    border-radius:10px;
+
+    background:var(--blue-light);
+
+    border-left:
+    4px solid var(--blue);
+
+}
+
+
+.insight strong{
+
+    display:block;
+
+    color:var(--blue-dark);
+
+    margin-bottom:5px;
+
+}
+
+
+.insight span{
+
+    color:#52657e;
+
+    font-size:12px;
+
+    line-height:1.5;
+
+}
+
+
+/* =====================================================
+   RESPONSIVO
+===================================================== */
+
+@media(max-width:1100px){
+
+    .kpis{
+
+        grid-template-columns:
+        repeat(3,1fr);
+
+    }
+
+
+    .filters-grid{
+
+        grid-template-columns:
+        repeat(2,1fr);
+
+    }
+
+}
+
+
+@media(max-width:750px){
+
+    .sidebar{
+
+        display:none;
+
+    }
+
+
+    .main{
+
+        margin-left:0;
+
+        width:100%;
+
+    }
+
+
+    .header{
+
+        padding:0 18px;
+
+    }
+
+
+    .content{
+
+        padding:18px;
+
+    }
+
+
+    .grid{
+
+        grid-template-columns:1fr;
+
+    }
+
+
+    .kpis{
+
+        grid-template-columns:
+        repeat(2,1fr);
+
+    }
+
+
+    .welcome{
+
+        display:block;
+
+        padding:35px;
+
+    }
+
+
+    .welcome-icon{
+
+        margin-bottom:25px;
+
+    }
+
+
+    .welcome h2{
+
+        font-size:30px;
+
+    }
+
+}
+
+</style>
+
 </head>
+
 
 <body>
 
-<header>
-    <div class="header-content">
-        <h1>⛏️ Analisador de Tempo de Ciclo</h1>
-        <p>
-            Identifique gargalos, perdas de tempo e oportunidades
-            para aumentar o número de viagens.
-        </p>
-    </div>
-</header>
 
-<main>
+<div class="app">
 
-    <!-- UPLOAD -->
-    <section class="card upload-card">
 
-        <div class="upload">
+<!-- =====================================================
+     MENU
+===================================================== -->
 
-            <div class="upload-icon">📊</div>
+<aside class="sidebar">
 
-            <h2>Carregue sua planilha</h2>
+    <div class="logo">
 
-            <p>
-                Selecione sua planilha de movimentação.
-                O sistema fará a análise automaticamente.
-            </p>
+        <div class="logo-icon">
+            M
+        </div>
 
-            <input
-                id="file"
-                type="file"
-                accept=".xlsx,.xls,.csv"
-            >
+        <div>
+
+            <strong>
+                MineCycle
+            </strong>
+
+            <span>
+                Inteligência operacional
+            </span>
 
         </div>
 
-        <div id="status" class="status"></div>
-
-    </section>
+    </div>
 
 
-    <!-- APLICAÇÃO -->
-    <section id="app" class="hidden">
+    <div class="menu-area">
 
-        <!-- FILTROS -->
-        <section class="card">
+        <button
+        class="menu active"
+        onclick="abrirPagina('dashboard',this)">
 
-            <h2>🔎 Filtros da análise</h2>
+            <span class="menu-icon">
+                ⌂
+            </span>
 
-            <div class="controls">
+            Dashboard
 
-                <div>
-                    <label>Aba</label>
-                    <select id="sheet"></select>
-                </div>
+        </button>
 
-                <div>
-                    <label>Rota</label>
-                    <select id="route">
-                        <option value="">Todas</option>
-                    </select>
-                </div>
 
-                <div>
-                    <label>Caminhão</label>
-                    <select id="truck">
-                        <option value="">Todos</option>
-                    </select>
-                </div>
+        <button
+        class="menu"
+        onclick="abrirPagina('gargalos',this)">
 
-                <div>
-                    <label>Equipamento de carga</label>
-                    <select id="loader">
-                        <option value="">Todos</option>
-                    </select>
-                </div>
+            <span class="menu-icon">
+                ◈
+            </span>
 
-                <div>
-                    <label>Turno / Turma</label>
-                    <select id="shift">
-                        <option value="">Todos</option>
-                    </select>
-                </div>
+            Gargalos
 
-                <button onclick="analyze()">
-                    Atualizar análise
-                </button>
+        </button>
 
-                <button
-                    class="secondary"
-                    onclick="downloadCSV()"
-                >
-                    Exportar gargalos
-                </button>
+
+        <button
+        class="menu"
+        onclick="abrirPagina('equipamentos',this)">
+
+            <span class="menu-icon">
+                ▣
+            </span>
+
+            Equipamentos
+
+        </button>
+
+
+        <button
+        class="menu"
+        onclick="abrirPagina('rotas',this)">
+
+            <span class="menu-icon">
+                ↔
+            </span>
+
+            Rotas
+
+        </button>
+
+    </div>
+
+
+    <div class="sidebar-bottom">
+
+        <strong>
+            Objetivo da análise
+        </strong>
+
+        Identificar onde o ciclo está
+        consumindo mais tempo para
+        reduzir perdas e aumentar
+        o número de viagens.
+
+    </div>
+
+</aside>
+
+
+
+<!-- =====================================================
+     MAIN
+===================================================== -->
+
+<main class="main">
+
+
+<header class="header">
+
+    <div>
+
+        <div class="header-small">
+            CONTROLE OPERACIONAL
+        </div>
+
+        <h1 id="titulo">
+            Dashboard operacional
+        </h1>
+
+    </div>
+
+
+    <label class="upload-button">
+
+        📊 Importar Excel
+
+        <input
+        type="file"
+        id="arquivo"
+        accept=".xlsx,.xls,.csv">
+
+    </label>
+
+</header>
+
+
+
+<div class="content">
+
+
+<!-- =====================================================
+     TELA INICIAL
+===================================================== -->
+
+<section id="inicio" class="welcome">
+
+    <div class="welcome-icon">
+        ⛏
+    </div>
+
+
+    <div>
+
+        <div class="welcome-label">
+            ANÁLISE DE TEMPO DE CICLO
+        </div>
+
+
+        <h2>
+            Descubra onde sua operação
+            está perdendo tempo.
+        </h2>
+
+
+        <p>
+
+            Importe sua movimentação detalhada
+            e transforme os registros em uma
+            visão operacional clara.
+
+            O sistema identifica os principais
+            tempos do ciclo, compara equipamentos,
+            encontra rotas críticas e calcula
+            o potencial de aumento de viagens.
+
+        </p>
+
+
+        <label class="welcome-button">
+
+            Selecionar planilha
+
+            <input
+            type="file"
+            id="arquivoInicio"
+            accept=".xlsx,.xls,.csv">
+
+        </label>
+
+    </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     DASHBOARD
+===================================================== -->
+
+<section
+id="dashboard"
+class="hidden">
+
+
+<!-- FILTROS -->
+
+<div class="card filters">
+
+    <div class="filters-title">
+
+        <strong>
+            Filtros da análise
+        </strong>
+
+        <span id="status">
+            Nenhuma planilha carregada
+        </span>
+
+    </div>
+
+
+    <div class="filters-grid">
+
+
+        <div class="filter">
+
+            <label>
+                Caminhão
+            </label>
+
+            <select id="filtroCaminhao">
+
+                <option value="">
+                    Todos
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div class="filter">
+
+            <label>
+                Equipamento de carga
+            </label>
+
+            <select id="filtroEquipamento">
+
+                <option value="">
+                    Todos
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div class="filter">
+
+            <label>
+                Rota
+            </label>
+
+            <select id="filtroRota">
+
+                <option value="">
+                    Todas
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div class="filter">
+
+            <label>
+                Turno
+            </label>
+
+            <select id="filtroTurno">
+
+                <option value="">
+                    Todos
+                </option>
+
+            </select>
+
+        </div>
+
+
+    </div>
+
+</div>
+
+
+
+<!-- KPIs -->
+
+<div class="kpis">
+
+
+    <div class="kpi main-kpi">
+
+        <span>
+            CICLO MÉDIO
+        </span>
+
+        <strong id="cicloMedio">
+            --
+        </strong>
+
+        <small>
+            tempo médio por ciclo
+        </small>
+
+    </div>
+
+
+    <div class="kpi">
+
+        <span>
+            MEDIANA
+        </span>
+
+        <strong id="mediana">
+            --
+        </strong>
+
+        <small>
+            ciclo típico
+        </small>
+
+    </div>
+
+
+    <div class="kpi">
+
+        <span>
+            REGISTROS
+        </span>
+
+        <strong id="registros">
+            --
+        </strong>
+
+        <small>
+            movimentações analisadas
+        </small>
+
+    </div>
+
+
+    <div class="kpi">
+
+        <span>
+            CICLOS CRÍTICOS
+        </span>
+
+        <strong id="criticos">
+            --
+        </strong>
+
+        <small>
+            acima de 60 minutos
+        </small>
+
+    </div>
+
+
+    <div class="kpi">
+
+        <span>
+            VIAGENS / 12H
+        </span>
+
+        <strong id="viagens">
+            --
+        </strong>
+
+        <small>
+            potencial matemático
+        </small>
+
+    </div>
+
+
+</div>
+
+
+
+<!-- GRÁFICOS -->
+
+<div class="grid">
+
+
+    <div class="card">
+
+        <div class="card-title">
+
+            <div>
+
+                <h3>
+                    Onde estamos perdendo tempo?
+                </h3>
+
+                <span>
+                    Tempo médio de cada etapa
+                </span>
 
             </div>
 
-        </section>
+            <div class="badge">
+                MIN
+            </div>
+
+        </div>
 
 
-        <!-- KPIs -->
-        <section
-            class="grid"
-            id="kpis">
-        </section>
+        <div class="chart">
+
+            <canvas
+            id="graficoEtapas">
+            </canvas>
+
+        </div>
+
+    </div>
 
 
-        <!-- ETAPAS -->
-        <section class="card">
 
-            <h2>⏱️ Onde estamos perdendo tempo?</h2>
+    <div class="card">
 
-            <p class="small">
-                As etapas são ordenadas pelo maior tempo médio.
-                Quanto maior o tempo, maior deve ser a atenção operacional.
-            </p>
+        <div class="card-title">
 
-            <div id="stages"></div>
+            <div>
 
-        </section>
+                <h3>
+                    Evolução do ciclo
+                </h3>
 
+                <span>
+                    Últimos registros
+                </span>
 
-        <!-- RANKING -->
-        <section class="card">
+            </div>
 
-            <h2>🚨 Ranking de gargalos</h2>
+            <div class="badge">
+                CICLO
+            </div>
 
-            <p class="small">
-                Ranking das rotas com maior tempo médio de ciclo.
-            </p>
-
-            <div id="ranking"></div>
-
-        </section>
+        </div>
 
 
-        <!-- SIMULAÇÃO -->
-        <section class="card">
+        <div class="chart">
 
-            <h2>📈 Potencial de viagens</h2>
+            <canvas
+            id="graficoCiclo">
+            </canvas>
 
-            <p>
-                Simule quanto podemos ganhar reduzindo o tempo médio
-                de cada ciclo.
-            </p>
+        </div>
 
-            <div class="controls simulation-controls">
+    </div>
 
-                <div>
-                    <label>
-                        Redução desejada (min/ciclo)
-                    </label>
+
+</div>
+
+
+
+<!-- PARTE INFERIOR -->
+
+<div class="grid margin-top">
+
+
+    <!-- GARGALHOS -->
+
+    <div class="card">
+
+        <div class="card-title">
+
+            <div>
+
+                <h3>
+                    Principais perdas
+                </h3>
+
+                <span>
+                    Etapas que mais consomem tempo
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div id="listaGargalos"></div>
+
+    </div>
+
+
+
+    <!-- SIMULAÇÃO -->
+
+    <div class="card">
+
+        <div class="card-title">
+
+            <div>
+
+                <h3>
+                    Potencial de viagens
+                </h3>
+
+                <span>
+                    Simule uma redução do ciclo
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="simulator">
+
+
+            <label>
+
+                Redução
+
+                <div class="input-area">
 
                     <input
-                        id="reduction"
-                        type="number"
-                        value="2"
-                        min="0"
-                        step="0.5"
-                    >
+                    type="number"
+                    id="reducao"
+                    value="2"
+                    min="0"
+                    step="0.5">
+
+                    <span>
+                        min/ciclo
+                    </span>
+
                 </div>
 
-                <button onclick="simulate()">
-                    Simular
-                </button>
-
-            </div>
-
-            <div
-                id="simulation"
-                class="simulation-result">
-            </div>
-
-        </section>
+            </label>
 
 
-        <!-- DETALHAMENTO -->
-        <section class="card">
+            <button onclick="simular()">
+                Simular
+            </button>
 
-            <h2>📋 Registros analisados</h2>
 
-            <div
-                id="table"
-                class="tablewrap">
-            </div>
+        </div>
 
-        </section>
 
-    </section>
+        <div id="resultadoSimulacao"></div>
+
+
+        <div id="insight"></div>
+
+    </div>
+
+
+</div>
+
+
+</section>
+
+
+
+<!-- =====================================================
+     GARGALOS
+===================================================== -->
+
+<section
+id="gargalos"
+class="hidden">
+
+
+<div class="card">
+
+    <div class="card-title">
+
+        <div>
+
+            <h3>
+                Ranking de gargalos
+            </h3>
+
+            <span>
+                Rotas ordenadas pelo maior tempo médio
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <div id="tabelaGargalos"></div>
+
+</div>
+
+</section>
+
+
+
+<!-- =====================================================
+     EQUIPAMENTOS
+===================================================== -->
+
+<section
+id="equipamentos"
+class="hidden">
+
+
+<div class="card">
+
+    <div class="card-title">
+
+        <div>
+
+            <h3>
+                Desempenho dos equipamentos
+            </h3>
+
+            <span>
+                Comparação entre os caminhões
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <div id="tabelaEquipamentos"></div>
+
+</div>
+
+</section>
+
+
+
+<!-- =====================================================
+     ROTAS
+===================================================== -->
+
+<section
+id="rotas"
+class="hidden">
+
+
+<div class="card">
+
+    <div class="card-title">
+
+        <div>
+
+            <h3>
+                Análise de rotas
+            </h3>
+
+            <span>
+                Comparação operacional das rotas
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <div id="tabelaRotas"></div>
+
+</div>
+
+</section>
+
+
+
+</div>
 
 </main>
 
-<script src="script.js"></script>
+</div>
+
+
+
+<script>
+
+/* =====================================================
+   VARIÁVEIS
+===================================================== */
+
+let dados = [];
+
+let colunas = [];
+
+let graficoEtapas = null;
+
+let graficoCiclo = null;
+
+
+/* =====================================================
+   NOMES EXATOS DA SUA PLANILHA
+===================================================== */
+
+const COLUNAS = {
+
+    caminhao:
+    "Caminhão",
+
+    equipamento:
+    "Equipamento de Carga",
+
+    origem:
+    "Origem",
+
+    destino:
+    "Destino",
+
+    turno:
+    "Turno",
+
+    ciclo:
+    "Tempo de Ciclo (min)",
+
+    filaCarregamento:
+    "Tempo Fila Carregamento (min)",
+
+    carregamento:
+    "Tempo Carregamento (min)",
+
+    filaBasculamento:
+    "Tempo Fila Basculamento (min)",
+
+    basculamento:
+    "Tempo Basculamento (min)",
+
+    vazio:
+    "Tempo Vazio (min)",
+
+    cheio:
+    "Tempo Cheio (min)",
+
+    manobraVazio:
+    "Tempo Manobra Vazio (min)",
+
+    manobraCheio:
+    "Tempo Manobra Cheio (min)",
+
+    parada:
+    "Tempos de Paradas ou Manutenção (min)",
+
+    massa:
+    "Massa (t)",
+
+    dmt:
+    "DMT (m)"
+
+};
+
+
+/* =====================================================
+   NORMALIZAR
+===================================================== */
+
+function normalizar(texto){
+
+    return String(texto ?? "")
+
+        .toLowerCase()
+
+        .normalize("NFD")
+
+        .replace(
+            /[\u0300-\u036f]/g,
+            ""
+        )
+
+        .trim();
+
+}
+
+
+/* =====================================================
+   ENCONTRAR COLUNA
+===================================================== */
+
+function encontrarColuna(nome){
+
+    const procurado =
+        normalizar(nome);
+
+
+    let coluna =
+        colunas.find(
+            c =>
+            normalizar(c) === procurado
+        );
+
+
+    if(coluna){
+
+        return coluna;
+
+    }
+
+
+    coluna =
+        colunas.find(
+            c =>
+            normalizar(c)
+            .includes(procurado)
+        );
+
+
+    return coluna || null;
+
+}
+
+
+/* =====================================================
+   NÚMERO
+===================================================== */
+
+function numero(valor){
+
+    if(
+        typeof valor ===
+        "number"
+    ){
+
+        return valor;
+
+    }
+
+
+    if(
+        valor === null ||
+        valor === undefined ||
+        valor === ""
+    ){
+
+        return NaN;
+
+    }
+
+
+    let texto =
+        String(valor)
+        .trim();
+
+
+    if(
+        texto.includes(",")
+    ){
+
+        texto =
+        texto
+        .replace(/\./g,"")
+        .replace(",", ".");
+
+    }
+
+
+    return parseFloat(texto);
+
+}
+
+
+/* =====================================================
+   MÉDIA
+===================================================== */
+
+function media(valores){
+
+    const lista =
+        valores.filter(
+            Number.isFinite
+        );
+
+
+    if(!lista.length){
+
+        return 0;
+
+    }
+
+
+    return lista.reduce(
+        (a,b) =>
+        a + b,
+        0
+    ) / lista.length;
+
+}
+
+
+/* =====================================================
+   MEDIANA
+===================================================== */
+
+function mediana(valores){
+
+    const lista =
+        valores
+
+        .filter(
+            Number.isFinite
+        )
+
+        .sort(
+            (a,b) =>
+            a-b
+        );
+
+
+    if(!lista.length){
+
+        return 0;
+
+    }
+
+
+    return lista[
+        Math.floor(
+            lista.length / 2
+        )
+    ];
+
+}
+
+
+/* =====================================================
+   FORMATAR
+===================================================== */
+
+function formatar(valor){
+
+    return Number(
+        valor || 0
+    )
+
+    .toFixed(1)
+
+    .replace(
+        ".",
+        ","
+    );
+
+}
+
+
+/* =====================================================
+   FORMATAR INTEIRO
+===================================================== */
+
+function inteiro(valor){
+
+    return Number(
+        valor || 0
+    )
+
+    .toLocaleString(
+        "pt-BR"
+    );
+
+}
+
+
+/* =====================================================
+   IMPORTAR EXCEL
+===================================================== */
+
+function importarArquivo(arquivo){
+
+    const leitor =
+        new FileReader();
+
+
+    leitor.onload =
+    function(evento){
+
+        try{
+
+            const workbook =
+                XLSX.read(
+                    evento.target.result,
+                    {
+                        type:"array",
+                        cellDates:true
+                    }
+                );
+
+
+            /*
+             A planilha enviada possui
+             uma linha de título e a linha
+             seguinte contém os cabeçalhos.
+            */
+
+            const nomeAba =
+                workbook.SheetNames[0];
+
+
+            const planilha =
+                workbook.Sheets[
+                    nomeAba
+                ];
+
+
+            const bruto =
+                XLSX.utils.sheet_to_json(
+                    planilha,
+                    {
+                        header:1,
+                        defval:"",
+                        raw:true
+                    }
+                );
+
+
+            /*
+             Encontrar automaticamente
+             a linha dos cabeçalhos.
+            */
+
+            let linhaCabecalho = 0;
+
+
+            for(
+                let i=0;
+                i<bruto.length;
+                i++
+            ){
+
+                const linha =
+                    bruto[i]
+                    .map(normalizar)
+                    .join(" | ");
+
+
+                if(
+                    linha.includes(
+                        "tempo de ciclo"
+                    ) &&
+                    linha.includes(
+                        "caminhao"
+                    )
+                ){
+
+                    linhaCabecalho =
+                    i;
+
+                    break;
+
+                }
+
+            }
+
+
+            const cabecalhos =
+                bruto[
+                    linhaCabecalho
+                ];
+
+
+            colunas =
+                cabecalhos
+                .map(
+                    x =>
+                    String(x || "")
+                    .trim()
+                );
+
+
+            dados =
+                bruto
+                .slice(
+                    linhaCabecalho + 1
+                )
+
+                .filter(
+                    linha =>
+                    linha.some(
+                        x =>
+                        x !== ""
+                    )
+                )
+
+                .map(
+                    linha => {
+
+                        const objeto = {};
+
+                        colunas.forEach(
+                            (
+                                coluna,
+                                indice
+                            ) => {
+
+                                objeto[
+                                    coluna
+                                ] =
+                                linha[indice];
+
+                            }
+                        );
+
+                        return objeto;
+
+                    }
+                );
+
+
+            if(!dados.length){
+
+                alert(
+                    "Não foram encontrados registros."
+                );
+
+                return;
+
+            }
+
+
+            document
+            .getElementById(
+                "inicio"
+            )
+            .classList
+            .add("hidden");
+
+
+            document
+            .getElementById(
+                "dashboard"
+            )
+            .classList
+            .remove("hidden");
+
+
+            document
+            .getElementById(
+                "status"
+            )
+            .textContent =
+            arquivo.name +
+            " • " +
+            inteiro(
+                dados.length
+            ) +
+            " registros";
+
+
+            preencherFiltros();
+
+            analisar();
+
+
+        }
+        catch(erro){
+
+            console.error(
+                erro
+            );
+
+            alert(
+                "Erro ao ler a planilha: " +
+                erro.message
+            );
+
+        }
+
+    };
+
+
+    leitor.readAsArrayBuffer(
+        arquivo
+    );
+
+}
+
+
+/* =====================================================
+   UPLOAD
+===================================================== */
+
+document
+.getElementById(
+    "arquivo"
+)
+.addEventListener(
+    "change",
+    function(){
+
+        if(
+            this.files &&
+            this.files[0]
+        ){
+
+            importarArquivo(
+                this.files[0]
+            );
+
+        }
+
+    }
+);
+
+
+document
+.getElementById(
+    "arquivoInicio"
+)
+.addEventListener(
+    "change",
+    function(){
+
+        if(
+            this.files &&
+            this.files[0]
+        ){
+
+            importarArquivo(
+                this.files[0]
+            );
+
+        }
+
+    }
+);
+
+
+/* =====================================================
+   PREENCHER FILTROS
+===================================================== */
+
+function preencherFiltros(){
+
+    criarFiltro(
+        "filtroCaminhao",
+        COLUNAS.caminhao,
+        "Todos"
+    );
+
+
+    criarFiltro(
+        "filtroEquipamento",
+        COLUNAS.equipamento,
+        "Todos"
+    );
+
+
+    criarFiltroRota();
+
+
+    criarFiltro(
+        "filtroTurno",
+        COLUNAS.turno,
+        "Todos"
+    );
+
+}
+
+
+/* =====================================================
+   FILTRO NORMAL
+===================================================== */
+
+function criarFiltro(
+    id,
+    nomeColuna,
+    textoInicial
+){
+
+    const coluna =
+        encontrarColuna(
+            nomeColuna
+        );
+
+
+    const select =
+        document.getElementById(
+            id
+        );
+
+
+    select.innerHTML =
+    `<option value="">
+        ${textoInicial}
+    </option>`;
+
+
+    if(!coluna){
+
+        return;
+
+    }
+
+
+    const valores =
+        [
+            ...new Set(
+
+                dados
+
+                .map(
+                    linha =>
+                    linha[coluna]
+                )
+
+                .filter(
+                    valor =>
+                    valor !== "" &&
+                    valor !== null &&
+                    valor !== undefined
+                )
+
+            )
+        ];
+
+
+    valores.sort(
+        (a,b) =>
+        String(a)
+        .localeCompare(
+            String(b),
+            "pt-BR",
+            {
+                numeric:true
+            }
+        )
+    );
+
+
+    valores.forEach(
+        valor => {
+
+            const option =
+                document.createElement(
+                    "option"
+                );
+
+            option.value =
+                valor;
+
+            option.textContent =
+                valor;
+
+            select.appendChild(
+                option
+            );
+
+        }
+    );
+
+}
+
+
+/* =====================================================
+   ROTA
+===================================================== */
+
+function criarFiltroRota(){
+
+    const select =
+        document.getElementById(
+            "filtroRota"
+        );
+
+
+    select.innerHTML =
+    `
+    <option value="">
+        Todas
+    </option>
+    `;
+
+
+    const origem =
+        encontrarColuna(
+            COLUNAS.origem
+        );
+
+
+    const destino =
+        encontrarColuna(
+            COLUNAS.destino
+        );
+
+
+    if(
+        !origem ||
+        !destino
+    ){
+
+        return;
+
+    }
+
+
+    const rotas =
+        [
+            ...new Set(
+
+                dados.map(
+                    linha =>
+                    linha[origem] +
+                    " → " +
+                    linha[destino]
+                )
+
+            )
+        ];
+
+
+    rotas.sort();
+
+
+    rotas.forEach(
+        rota => {
+
+            const option =
+                document.createElement(
+                    "option"
+                );
+
+            option.value =
+                rota;
+
+            option.textContent =
+                rota;
+
+            select.appendChild(
+                option
+            );
+
+        }
+    );
+
+}
+
+
+/* =====================================================
+   DADOS FILTRADOS
+===================================================== */
+
+function obterDadosFiltrados(){
+
+    let resultado =
+        [...dados];
+
+
+    const filtros = [
+
+        [
+            "filtroCaminhao",
+            COLUNAS.caminhao
+        ],
+
+        [
+            "filtroEquipamento",
+            COLUNAS.equipamento
+        ],
+
+        [
+            "filtroTurno",
+            COLUNAS.turno
+        ]
+
+    ];
+
+
+    filtros.forEach(
+        (
+            [id,nome]
+        ) => {
+
+            const coluna =
+                encontrarColuna(
+                    nome
+                );
+
+
+            const valor =
+                document
+                .getElementById(
+                    id
+                )
+                .value;
+
+
+            if(
+                coluna &&
+                valor
+            ){
+
+                resultado =
+                resultado.filter(
+                    linha =>
+                    String(
+                        linha[coluna]
+                    ) === valor
+                );
+
+            }
+
+        }
+    );
+
+
+    const filtroRota =
+        document
+        .getElementById(
+            "filtroRota"
+        )
+        .value;
+
+
+    if(filtroRota){
+
+        const origem =
+            encontrarColuna(
+                COLUNAS.origem
+            );
+
+
+        const destino =
+            encontrarColuna(
+                COLUNAS.destino
+            );
+
+
+        if(
+            origem &&
+            destino
+        ){
+
+            resultado =
+            resultado.filter(
+                linha => {
+
+                    const rota =
+                    linha[origem] +
+                    " → " +
+                    linha[destino];
+
+                    return rota ===
+                    filtroRota;
+
+                }
+            );
+
+        }
+
+    }
+
+
+    return resultado;
+
+}
+
+
+/* =====================================================
+   ANALISAR
+===================================================== */
+
+function analisar(){
+
+    const registros =
+        obterDadosFiltrados();
+
+
+    const colunaCiclo =
+        encontrarColuna(
+            COLUNAS.ciclo
+        );
+
+
+    if(!colunaCiclo){
+
+        alert(
+            "Não encontrei a coluna Tempo de Ciclo (min)."
+        );
+
+        return;
+
+    }
+
+
+    const ciclos =
+        registros
+
+        .map(
+            linha =>
+            numero(
+                linha[colunaCiclo]
+            )
+        )
+
+        .filter(
+            valor =>
+            Number.isFinite(valor) &&
+            valor >= 0 &&
+            valor < 180
+        );
+
+
+    const cicloMedio =
+        media(ciclos);
+
+
+    const cicloMediana =
+        mediana(ciclos);
+
+
+    const criticos =
+        ciclos.filter(
+            valor =>
+            valor > 60
+        ).length;
+
+
+    const viagens =
+        cicloMedio > 0
+        ? 720 / cicloMedio
+        : 0;
+
+
+    document
+    .getElementById(
+        "cicloMedio"
+    )
+    .textContent =
+    formatar(
+        cicloMedio
+    ) +
+    " min";
+
+
+    document
+    .getElementById(
+        "mediana"
+    )
+    .textContent =
+    formatar(
+        cicloMediana
+    ) +
+    " min";
+
+
+    document
+    .getElementById(
+        "registros"
+    )
+    .textContent =
+    inteiro(
+        registros.length
+    );
+
+
+    document
+    .getElementById(
+        "criticos"
+    )
+    .textContent =
+    inteiro(
+        criticos
+    );
+
+
+    document
+    .getElementById(
+        "viagens"
+    )
+    .textContent =
+    formatar(
+        viagens
+    );
+
+
+    gerarGraficoEtapas(
+        registros
+    );
+
+
+    gerarGraficoCiclo(
+        registros
+    );
+
+
+    gerarGargalos(
+        registros
+    );
+
+
+    gerarTabelaGargalos(
+        registros
+    );
+
+
+    gerarTabelaEquipamentos(
+        registros
+    );
+
+
+    gerarTabelaRotas(
+        registros
+    );
+
+
+    simular();
+
+}
+
+
+/* =====================================================
+   ETAPAS
+===================================================== */
+
+function obterEtapas(
+    registros
+){
+
+    const etapas = [
+
+        [
+            "Fila de carregamento",
+            COLUNAS.filaCarregamento
+        ],
+
+        [
+            "Carregamento",
+            COLUNAS.carregamento
+        ],
+
+        [
+            "Fila de basculamento",
+            COLUNAS.filaBasculamento
+        ],
+
+        [
+            "Basculamento",
+            COLUNAS.basculamento
+        ],
+
+        [
+            "Tempo vazio",
+            COLUNAS.vazio
+        ],
+
+        [
+            "Tempo cheio",
+            COLUNAS.cheio
+        ],
+
+        [
+            "Manobra vazio",
+            COLUNAS.manobraVazio
+        ],
+
+        [
+            "Manobra cheio",
+            COLUNAS.manobraCheio
+        ],
+
+        [
+            "Paradas / manutenção",
+            COLUNAS.parada
+        ]
+
+    ];
+
+
+    return etapas
+
+    .map(
+        ([nome,colunaNome]) => {
+
+            const coluna =
+                encontrarColuna(
+                    colunaNome
+                );
+
+
+            if(!coluna){
+
+                return null;
+
+            }
+
+
+            const valores =
+                registros
+
+                .map(
+                    linha =>
+                    numero(
+                        linha[coluna]
+                    )
+                )
+
+                .filter(
+                    valor =>
+                    Number.isFinite(
+                        valor
+                    ) &&
+                    valor >= 0 &&
+                    valor < 180
+                );
+
+
+            return {
+
+                nome,
+
+                valor:
+                media(
+                    valores
+                ),
+
+                registros:
+                valores.length
+
+            };
+
+        }
+    )
+
+    .filter(
+        Boolean
+    )
+
+    .sort(
+        (a,b) =>
+        b.valor -
+        a.valor
+    );
+
+}
+
+
+/* =====================================================
+   GRÁFICO ETAPAS
+===================================================== */
+
+function gerarGraficoEtapas(
+    registros
+){
+
+    const etapas =
+        obterEtapas(
+            registros
+        );
+
+
+    if(graficoEtapas){
+
+        graficoEtapas.destroy();
+
+    }
+
+
+    graficoEtapas =
+    new Chart(
+
+        document.getElementById(
+            "graficoEtapas"
+        ),
+
+        {
+
+            type:"bar",
+
+            data:{
+
+                labels:
+                etapas.map(
+                    item =>
+                    item.nome
+                ),
+
+                datasets:[
+
+                    {
+
+                        data:
+                        etapas.map(
+                            item =>
+                            item.valor
+                        ),
+
+                        backgroundColor:
+                        "#1769e0",
+
+                        borderRadius:6
+
+                    }
+
+                ]
+
+            },
+
+
+            options:{
+
+                responsive:true,
+
+                maintainAspectRatio:false,
+
+                plugins:{
+
+                    legend:{
+                        display:false
+                    }
+
+                },
+
+                scales:{
+
+                    x:{
+
+                        grid:{
+                            display:false
+                        },
+
+                        ticks:{
+                            font:{
+                                size:10
+                            }
+                        }
+
+                    },
+
+                    y:{
+
+                        beginAtZero:true,
+
+                        grid:{
+                            color:
+                            "#edf0f4"
+                        },
+
+                        ticks:{
+                            font:{
+                                size:10
+                            }
+                        }
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    );
+
+
+    const lista =
+        document.getElementById(
+            "listaGargalos"
+        );
+
+
+    if(!etapas.length){
+
+        lista.innerHTML =
+        "<p>Nenhuma etapa encontrada.</p>";
+
+        return;
+
+    }
+
+
+    const maior =
+        etapas[0].valor;
+
+
+    lista.innerHTML =
+    etapas
+    .slice(0,7)
+    .map(
+        etapa => `
+
+        <div class="gargalo">
+
+            <div class="gargalo-header">
+
+                <span>
+                    ${etapa.nome}
+                </span>
+
+                <strong>
+                    ${formatar(
+                        etapa.valor
+                    )} min
+                </strong>
+
+            </div>
+
+
+            <div class="progress">
+
+                <div
+                style="
+                width:
+                ${
+                    maior > 0
+                    ? (
+                        etapa.valor /
+                        maior *
+                        100
+                    )
+                    : 0
+                }%;
+                ">
+                </div>
+
+            </div>
+
+        </div>
+
+        `
+    )
+    .join("");
+
+}
+
+
+/* =====================================================
+   EVOLUÇÃO
+===================================================== */
+
+function gerarGraficoCiclo(
+    registros
+){
+
+    const coluna =
+        encontrarColuna(
+            COLUNAS.ciclo
+        );
+
+
+    const valores =
+        registros
+
+        .map(
+            linha =>
+            numero(
+                linha[coluna]
+            )
+        )
+
+        .filter(
+            valor =>
+            Number.isFinite(valor) &&
+            valor >= 0 &&
+            valor < 180
+        )
+
+        .slice(-100);
+
+
+    if(graficoCiclo){
+
+        graficoCiclo.destroy();
+
+    }
+
+
+    graficoCiclo =
+    new Chart(
+
+        document.getElementById(
+            "graficoCiclo"
+        ),
+
+        {
+
+            type:"line",
+
+            data:{
+
+                labels:
+                valores.map(
+                    (_,i) =>
+                    i+1
+                ),
+
+                datasets:[
+
+                    {
+
+                        data:valores,
+
+                        borderColor:
+                        "#1769e0",
+
+                        backgroundColor:
+                        "rgba(23,105,224,.08)",
+
+                        fill:true,
+
+                        tension:.3,
+
+                        pointRadius:2
+
+                    }
+
+                ]
+
+            },
+
+
+            options:{
+
+                responsive:true,
+
+                maintainAspectRatio:false,
+
+                plugins:{
+
+                    legend:{
+                        display:false
+                    }
+
+                },
+
+                scales:{
+
+                    x:{
+
+                        grid:{
+                            display:false
+                        },
+
+                        ticks:{
+                            display:false
+                        }
+
+                    },
+
+                    y:{
+
+                        beginAtZero:true,
+
+                        grid:{
+                            color:
+                            "#edf0f4"
+                        }
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    );
+
+}
+
+
+/* =====================================================
+   PRIORIDADE
+===================================================== */
+
+function prioridade(
+    ciclo
+){
+
+    if(ciclo > 60){
+
+        return `
+        <span class="priority-high">
+            ALTA
+        </span>
+        `;
+
+    }
+
+
+    if(ciclo > 40){
+
+        return `
+        <span class="priority-medium">
+            MÉDIA
+        </span>
+        `;
+
+    }
+
+
+    return `
+    <span class="priority-normal">
+        NORMAL
+    </span>
+    `;
+
+}
+
+
+/* =====================================================
+   RANKING DE GARGALOS
+===================================================== */
+
+function gerarTabelaGargalos(
+    registros
+){
+
+    const colunaCiclo =
+        encontrarColuna(
+            COLUNAS.ciclo
+        );
+
+
+    const origem =
+        encontrarColuna(
+            COLUNAS.origem
+        );
+
+
+    const destino =
+        encontrarColuna(
+            COLUNAS.destino
+        );
+
+
+    if(
+        !colunaCiclo ||
+        !origem ||
+        !destino
+    ){
+
+        return;
+
+    }
+
+
+    const grupos = {};
+
+
+    registros.forEach(
+        linha => {
+
+            const ciclo =
+                numero(
+                    linha[colunaCiclo]
+                );
+
+
+            if(
+                !Number.isFinite(ciclo) ||
+                ciclo < 0 ||
+                ciclo >= 180
+            ){
+
+                return;
+
+            }
+
+
+            const rota =
+                linha[origem] +
+                " → " +
+                linha[destino];
+
+
+            if(
+                !grupos[rota]
+            ){
+
+                grupos[rota] = [];
+
+            }
+
+
+            grupos[rota].push(
+                ciclo
+            );
+
+        }
+    );
+
+
+    const ranking =
+        Object.entries(
+            grupos
+        )
+
+        .map(
+            ([rota,valores]) => ({
+
+                rota,
+
+                registros:
+                valores.length,
+
+                media:
+                media(valores),
+
+                mediana:
+                mediana(valores)
+
+            })
+        )
+
+        .sort(
+            (a,b) =>
+            b.media -
+            a.media
+        );
+
+
+    document
+    .getElementById(
+        "tabelaGargalos"
+    )
+    .innerHTML =
+    criarTabela(
+
+        [
+            "Rota",
+            "Registros",
+            "Ciclo médio",
+            "Mediana",
+            "Prioridade"
+        ],
+
+        ranking.map(
+            item => [
+
+                item.rota,
+
+                inteiro(
+                    item.registros
+                ),
+
+                formatar(
+                    item.media
+                ) +
+                " min",
+
+                formatar(
+                    item.mediana
+                ) +
+                " min",
+
+                prioridade(
+                    item.media
+                )
+
+            ]
+        )
+
+    );
+
+}
+
+
+/* =====================================================
+   EQUIPAMENTOS
+===================================================== */
+
+function gerarTabelaEquipamentos(
+    registros
+){
+
+    const colunaCiclo =
+        encontrarColuna(
+            COLUNAS.ciclo
+        );
+
+
+    const colunaCaminhao =
+        encontrarColuna(
+            COLUNAS.caminhao
+        );
+
+
+    if(
+        !colunaCiclo ||
+        !colunaCaminhao
+    ){
+
+        return;
+
+    }
+
+
+    const grupos = {};
+
+
+    registros.forEach(
+        linha => {
+
+            const ciclo =
+                numero(
+                    linha[colunaCiclo]
+                );
+
+
+            if(
+                !Number.isFinite(ciclo) ||
+                ciclo >= 180
+            ){
+
+                return;
+
+            }
+
+
+            const caminhao =
+                linha[colunaCaminhao];
+
+
+            if(
+                !grupos[caminhao]
+            ){
+
+                grupos[caminhao] = [];
+
+            }
+
+
+            grupos[caminhao].push(
+                ciclo
+            );
+
+        }
+    );
+
+
+    const resultado =
+        Object.entries(
+            grupos
+        )
+
+        .map(
+            ([caminhao,valores]) => ({
+
+                caminhao,
+
+                registros:
+                valores.length,
+
+                media:
+                media(valores),
+
+                mediana:
+                mediana(valores)
+
+            })
+        )
+
+        .sort(
+            (a,b) =>
+            b.media -
+            a.media
+        );
+
+
+    document
+    .getElementById(
+        "tabelaEquipamentos"
+    )
+    .innerHTML =
+    criarTabela(
+
+        [
+            "Caminhão",
+            "Registros",
+            "Ciclo médio",
+            "Mediana",
+            "Situação"
+        ],
+
+        resultado.map(
+            item => [
+
+                item.caminhao,
+
+                inteiro(
+                    item.registros
+                ),
+
+                formatar(
+                    item.media
+                ) +
+                " min",
+
+                formatar(
+                    item.mediana
+                ) +
+                " min",
+
+                prioridade(
+                    item.media
+                )
+
+            ]
+        )
+
+    );
+
+}
+
+
+/* =====================================================
+   ROTAS
+===================================================== */
+
+function gerarTabelaRotas(
+    registros
+){
+
+    const colunaCiclo =
+        encontrarColuna(
+            COLUNAS.ciclo
+        );
+
+
+    const origem =
+        encontrarColuna(
+            COLUNAS.origem
+        );
+
+
+    const destino =
+        encontrarColuna(
+            COLUNAS.destino
+        );
+
+
+    const massa =
+        encontrarColuna(
+            COLUNAS.massa
+        );
+
+
+    const dmt =
+        encontrarColuna(
+            COLUNAS.dmt
+        );
+
+
+    if(
+        !colunaCiclo ||
+        !origem ||
+        !destino
+    ){
+
+        return;
+
+    }
+
+
+    const grupos = {};
+
+
+    registros.forEach(
+        linha => {
+
+            const ciclo =
+                numero(
+                    linha[colunaCiclo]
+                );
+
+
+            if(
+                !Number.isFinite(ciclo) ||
+                ciclo >= 180
+            ){
+
+                return;
+
+            }
+
+
+            const rota =
+                linha[origem] +
+                " → " +
+                linha[destino];
+
+
+            if(
+                !grupos[rota]
+            ){
+
+                grupos[rota] = [];
+
+            }
+
+
+            grupos[rota].push({
+
+                ciclo,
+
+                massa:
+                massa
+                ? numero(
+                    linha[massa]
+                )
+                : NaN,
+
+                dmt:
+                dmt
+                ? numero(
+                    linha[dmt]
+                )
+                : NaN
+
+            });
+
+        }
+    );
+
+
+    const resultado =
+        Object.entries(
+            grupos
+        )
+
+        .map(
+            ([rota,valores]) => ({
+
+                rota,
+
+                registros:
+                valores.length,
+
+                ciclo:
+                media(
+                    valores.map(
+                        x =>
+                        x.ciclo
+                    )
+                ),
+
+                massa:
+                media(
+                    valores.map(
+                        x =>
+                        x.massa
+                    )
+                ),
+
+                dmt:
+                media(
+                    valores.map(
+                        x =>
+                        x.dmt
+                    )
+                )
+
+            })
+        )
+
+        .sort(
+            (a,b) =>
+            b.ciclo -
+            a.ciclo
+        );
+
+
+    document
+    .getElementById(
+        "tabelaRotas"
+    )
+    .innerHTML =
+    criarTabela(
+
+        [
+            "Rota",
+            "Movimentações",
+            "Ciclo médio",
+            "Massa média",
+            "DMT médio"
+        ],
+
+        resultado.map(
+            item => [
+
+                item.rota,
+
+                inteiro(
+                    item.registros
+                ),
+
+                formatar(
+                    item.ciclo
+                ) +
+                " min",
+
+                formatar(
+                    item.massa
+                ) +
+                " t",
+
+                formatar(
+                    item.dmt
+                ) +
+                " m"
+
+            ]
+        )
+
+    );
+
+}
+
+
+/* =====================================================
+   CRIAR TABELA
+===================================================== */
+
+function criarTabela(
+    cabecalho,
+    linhas
+){
+
+    if(
+        !linhas.length
+    ){
+
+        return `
+        <p>
+            Nenhum dado encontrado.
+        </p>
+        `;
+
+    }
+
+
+    return `
+
+    <div class="table-container">
+
+        <table>
+
+            <thead>
+
+                <tr>
+
+                    ${
+                        cabecalho
+
+                        .map(
+                            coluna =>
+                            `<th>
+                                ${coluna}
+                            </th>`
+                        )
+
+                        .join("")
+                    }
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                ${
+                    linhas
+
+                    .map(
+                        linha => `
+
+                        <tr>
+
+                            ${
+                                linha
+
+                                .map(
+                                    valor =>
+                                    `<td>
+                                        ${valor}
+                                    </td>`
+                                )
+
+                                .join("")
+                            }
+
+                        </tr>
+
+                        `
+                    )
+
+                    .join("")
+                }
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    `;
+
+}
+
+
+/* =====================================================
+   SIMULADOR
+===================================================== */
+
+function simular(){
+
+    if(!dados.length){
+
+        return;
+
+    }
+
+
+    const registros =
+        obterDadosFiltrados();
+
+
+    const coluna =
+        encontrarColuna(
+            COLUNAS.ciclo
+        );
+
+
+    if(!coluna){
+
+        return;
+
+    }
+
+
+    const ciclos =
+        registros
+
+        .map(
+            linha =>
+            numero(
+                linha[coluna]
+            )
+        )
+
+        .filter(
+            valor =>
+            Number.isFinite(valor) &&
+            valor > 0 &&
+            valor < 180
+        );
+
+
+    const cicloAtual =
+        media(ciclos);
+
+
+    const reducao =
+        numero(
+            document
+            .getElementById(
+                "reducao"
+            )
+            .value
+        ) || 0;
+
+
+    if(
+        !cicloAtual
+    ){
+
+        return;
+
+    }
+
+
+    const novoCiclo =
+        Math.max(
+            .1,
+            cicloAtual -
+            reducao
+        );
+
+
+    /*
+       Simulação de 12 horas.
+    */
+
+    const viagensAtual =
+        720 /
+        cicloAtual;
+
+
+    const viagensNova =
+        720 /
+        novoCiclo;
+
+
+    const ganho =
+        viagensNova -
+        viagensAtual;
+
+
+    const ganhoPercentual =
+        viagensAtual > 0
+        ?
+        (
+            ganho /
+            viagensAtual
+        ) * 100
+        :
+        0;
+
+
+    document
+    .getElementById(
+        "resultadoSimulacao"
+    )
+    .innerHTML = `
+
+    <div class="sim-results">
+
+        <div class="sim-result">
+
+            <span>
+                Viagens atuais / 12h
+            </span>
+
+            <strong>
+                ${formatar(
+                    viagensAtual
+                )}
+            </strong>
+
+        </div>
+
+
+        <div class="sim-result">
+
+            <span>
+                Viagens após redução
+            </span>
+
+            <strong>
+                ${formatar(
+                    viagensNova
+                )}
+            </strong>
+
+        </div>
+
+
+        <div class="sim-result">
+
+            <span>
+                Ganho potencial
+            </span>
+
+            <strong>
+                +${formatar(
+                    ganho
+                )}
+            </strong>
+
+        </div>
+
+    </div>
+
+    `;
+
+
+    let mensagem;
+
+
+    if(
+        reducao > 0 &&
+        ganho > 0
+    ){
+
+        mensagem =
+        `
+        Se a operação conseguir retirar
+        <strong>${formatar(reducao)} min</strong>
+        de cada ciclo, o ganho matemático
+        estimado seria de aproximadamente
+        <strong>+${formatar(ganho)} viagens
+        por caminhão em 12 horas</strong>,
+        considerando que os demais fatores
+        permaneçam iguais.
+        `;
+
+    }
+    else{
+
+        mensagem =
+        `
+        Informe uma redução de tempo
+        para visualizar o potencial
+        de aumento de viagens.
+        `;
+
+    }
+
+
+    document
+    .getElementById(
+        "insight"
+    )
+    .innerHTML = `
+
+    <div class="insight">
+
+        <strong>
+            💡 Oportunidade operacional
+        </strong>
+
+        <span>
+            ${mensagem}
+        </span>
+
+    </div>
+
+    `;
+
+}
+
+
+/* =====================================================
+   MENU
+===================================================== */
+
+function abrirPagina(
+    pagina,
+    botao
+){
+
+    document
+    .querySelectorAll(
+        "#dashboard,#gargalos,#equipamentos,#rotas"
+    )
+
+    .forEach(
+        elemento =>
+        elemento.classList.add(
+            "hidden"
+        )
+    );
+
+
+    document
+    .getElementById(
+        pagina
+    )
+    .classList.remove(
+        "hidden"
+    );
+
+
+    document
+    .querySelectorAll(
+        ".menu"
+    )
+
+    .forEach(
+        elemento =>
+        elemento.classList.remove(
+            "active"
+        )
+    );
+
+
+    botao.classList.add(
+        "active"
+    );
+
+
+    const titulos = {
+
+        dashboard:
+        "Dashboard operacional",
+
+        gargalos:
+        "Mapa de gargalos",
+
+        equipamentos:
+        "Desempenho dos equipamentos",
+
+        rotas:
+        "Análise de rotas"
+
+    };
+
+
+    document
+    .getElementById(
+        "titulo"
+    )
+    .textContent =
+    titulos[pagina];
+
+}
+
+
+/* =====================================================
+   FILTROS
+===================================================== */
+
+document
+.querySelectorAll(
+    "#filtroCaminhao," +
+    "#filtroEquipamento," +
+    "#filtroRota," +
+    "#filtroTurno"
+)
+
+.forEach(
+    filtro => {
+
+        filtro.addEventListener(
+            "change",
+            analisar
+        );
+
+    }
+);
+
+
+/* =====================================================
+   SIMULADOR
+===================================================== */
+
+document
+.getElementById(
+    "reducao"
+)
+.addEventListener(
+    "input",
+    simular
+);
+
+</script>
+
 
 </body>
+
 </html>
-```
